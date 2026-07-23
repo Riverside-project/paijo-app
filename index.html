@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0B4D2F">
+<title>PaiJO — Bolo Dewe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green-900:#0B4D2F;
+    --green-700:#146B3F;
+    --green-600:#1C8752;
+    --green-050:#EAF4EE;
+    --white:#FFFFFF;
+    --ink:#182420;
+    --ink-soft:#5C6B64;
+    --border:#DCE6E0;
+    --bg:#F6F8F6;
+    --danger:#C0392B;
+    --radius-lg:22px;
+    --radius-md:16px;
+    --radius-sm:10px;
+    --font-display:'Poppins',sans-serif;
+    --font-script:'Caveat',cursive;
+    --font-body:'Inter',sans-serif;
+    --font-scale:1;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:var(--font-body);
+    background:linear-gradient(180deg,#0B4D2F 0%, #0B4D2F 0%, #EDEFEA 0%);
+    background:#0d1f17;
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    font-size:calc(16px * var(--font-scale));
+  }
+  #app{
+    max-width:480px;
+    margin:0 auto;
+    height:100vh;
+    height:100dvh;
+    background:var(--bg);
+    position:relative;
+    overflow:hidden;
+    box-shadow:0 0 60px rgba(0,0,0,0.35);
+  }
+  .screen{
+    position:absolute;
+    inset:0;
+    display:none;
+    flex-direction:column;
+    animation:fadeIn .35s ease;
+  }
+  .screen.active{display:flex;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);}}
+
+  /* ---------- SPLASH ---------- */
+  #screen-splash{
+    background:linear-gradient(160deg,#0B4D2F 0%,#0E3A24 100%);
+    align-items:center;
+    justify-content:center;
+    color:var(--white);
+    text-align:center;
+  }
+  .splash-mark{width:120px;height:120px;margin-bottom:18px;}
+  .splash-title{font-family:var(--font-display);font-weight:800;font-size:38px;letter-spacing:.5px;}
+  .splash-title .accent{color:#8CD9A9;}
+  .splash-sub{font-family:var(--font-script);font-size:26px;color:#CDEBD9;margin-top:-6px;}
+  .splash-footer{position:absolute;bottom:28px;left:0;right:0;text-align:center;color:#9FC9AF;font-size:13px;letter-spacing:.5px;}
+  .splash-footer b{color:var(--white);}
+
+  /* ---------- LOGIN ---------- */
+  #screen-login{background:var(--white);padding:22px 24px 28px;}
+  .login-topbar{display:flex;align-items:center;justify-content:space-between;padding-top:6px;}
+  .back-btn{border:none;background:none;font-size:15px;color:var(--green-900);font-weight:600;display:flex;align-items:center;gap:4px;cursor:pointer;}
+  .lang-toggle{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--ink-soft);}
+  .switch{position:relative;width:44px;height:24px;background:var(--green-900);border-radius:20px;cursor:pointer;flex-shrink:0;}
+  .switch::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;background:var(--white);border-radius:50%;transition:transform .2s ease;}
+  .switch.on::after{transform:translateX(20px);}
+  .login-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;}
+  .login-mark{width:84px;height:84px;color:var(--green-900);}
+  .login-title{font-family:var(--font-display);font-weight:800;font-size:30px;color:var(--green-900);}
+  .login-sub{font-family:var(--font-script);font-size:22px;color:var(--green-700);margin-top:-8px;}
+  .field{width:100%;margin-top:18px;}
+  .field input{
+    width:100%;padding:14px 16px;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+    font-size:15px;font-family:var(--font-body);outline:none;transition:border .15s ease;background:var(--white);
+  }
+  .field input:focus{border-color:var(--green-600);}
+  .btn-primary{
+    width:100%;margin-top:22px;padding:15px;border:none;border-radius:var(--radius-sm);
+    background:var(--green-900);color:var(--white);font-weight:700;font-size:15.5px;
+    letter-spacing:.3px;cursor:pointer;transition:background .15s ease;
+    font-family:var(--font-body);
+  }
+  .btn-primary:active{background:var(--green-700);}
+  .login-links{margin-top:16px;display:flex;gap:14px;font-size:13.5px;}
+  .login-links a{color:var(--green-700);text-decoration:none;font-weight:600;}
+  .login-footer{text-align:center;color:var(--ink-soft);font-size:12px;}
+  .login-footer .pwr{margin-top:2px;color:var(--ink);}
+  .login-footer .pwr b{color:var(--green-900);}
+
+  /* ---------- CHAT ---------- */
+  #screen-chat{background:var(--bg);}
+  .app-header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 16px;background:var(--white);border-bottom:1px solid var(--border);
+    flex-shrink:0;
+  }
+  .header-left{display:flex;align-items:center;gap:10px;}
+  .hamburger{border:none;background:none;cursor:pointer;padding:4px;color:var(--green-900);}
+  .header-logo{width:30px;height:30px;color:var(--green-900);}
+  .header-title{font-family:var(--font-display);font-weight:700;font-size:17px;color:var(--green-900);}
+  .header-right{display:flex;align-items:center;gap:10px;}
+  .icon-btn{border:none;background:var(--green-050);color:var(--green-900);width:34px;height:34px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+
+  .chat-area{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;}
+  .msg-row{display:flex;flex-direction:column;max-width:82%;}
+  .msg-row.user{align-self:flex-end;align-items:flex-end;}
+  .msg-row.bot{align-self:flex-start;align-items:flex-start;}
+  .msg-lang{font-size:10.5px;color:var(--ink-soft);margin-bottom:3px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+  .bubble{
+    padding:10px 14px;border-radius:var(--radius-md);font-size:calc(14.5px * var(--font-scale));line-height:1.45;
+  }
+  .msg-row.user .bubble{background:var(--green-050);color:var(--ink);border-bottom-right-radius:4px;}
+  .msg-row.bot .bubble{background:var(--white);border:1px solid var(--border);color:var(--ink);border-bottom-left-radius:4px;}
+  .bubble img{max-width:100%;border-radius:12px;margin-top:8px;display:block;}
+  .typing{display:flex;gap:4px;padding:6px 4px;}
+  .typing span{width:6px;height:6px;background:var(--ink-soft);border-radius:50%;animation:blink 1.2s infinite ease-in-out;}
+  .typing span:nth-child(2){animation-delay:.2s;}
+  .typing span:nth-child(3){animation-delay:.4s;}
+  @keyframes blink{0%,80%,100%{opacity:.25;} 40%{opacity:1;}}
+
+  /* Music player */
+  .music-player{
+    margin:0 16px 10px;background:linear-gradient(135deg,var(--green-900),var(--green-700));
+    border-radius:var(--radius-md);padding:10px 12px;display:none;align-items:center;gap:12px;
+    color:var(--white);flex-shrink:0;
+  }
+  .music-player.show{display:flex;}
+  .music-cover{width:42px;height:42px;border-radius:9px;background:#0006 center/cover;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;}
+  .music-info{flex:1;min-width:0;}
+  .music-label{font-size:10.5px;opacity:.8;letter-spacing:.4px;}
+  .music-title{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .music-controls{display:flex;align-items:center;gap:6px;}
+  .music-controls button{background:none;border:none;color:var(--white);cursor:pointer;padding:4px;display:flex;}
+  .music-controls button.fav.active{color:#FF8FA3;}
+
+  .input-bar{
+    display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--white);
+    border-top:1px solid var(--border);flex-shrink:0;position:relative;
+  }
+  .attach-btn{width:38px;height:38px;border-radius:50%;border:none;background:var(--green-900);color:var(--white);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;}
+  .input-bar input[type=text]{
+    flex:1;border:1px solid var(--border);border-radius:20px;padding:10px 16px;font-size:calc(14px * var(--font-scale));
+    outline:none;font-family:var(--font-body);
+  }
+  .input-bar input[type=text]:focus{border-color:var(--green-600);}
+  .mic-btn,.send-btn{border:none;background:none;cursor:pointer;color:var(--green-900);width:34px;height:34px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .send-btn{background:var(--green-900);color:var(--white);border-radius:50%;}
+
+  /* attach popup */
+  .attach-popup{
+    position:absolute;bottom:64px;left:12px;background:var(--green-900);border-radius:var(--radius-md);
+    padding:14px;display:none;gap:18px;box-shadow:0 8px 24px rgba(0,0,0,.25);
+  }
+  .attach-popup.show{display:flex;}
+  .attach-opt{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--white);font-size:11.5px;background:none;border:none;cursor:pointer;}
+  .attach-opt span.ic{width:38px;height:38px;background:#ffffff22;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+
+  /* ---------- SIDEBAR DRAWER ---------- */
+  .overlay{position:absolute;inset:0;background:rgba(10,20,15,.45);display:none;z-index:20;}
+  .overlay.show{display:block;}
+  .drawer{
+    position:absolute;top:0;left:0;bottom:0;width:82%;max-width:340px;background:var(--white);
+    z-index:21;transform:translateX(-105%);transition:transform .28s ease;display:flex;flex-direction:column;
+  }
+  .drawer.show{transform:translateX(0);}
+  .drawer-header{background:var(--green-900);color:var(--white);padding:20px 16px 16px;}
+  .drawer-header .brand{display:flex;align-items:center;gap:8px;font-family:var(--font-display);font-weight:700;font-size:16px;margin-bottom:12px;}
+  .drawer-header .brand svg{width:24px;height:24px;}
+  .drawer-search{background:#ffffff22;border-radius:10px;padding:9px 12px;font-size:13px;color:#e9f3ec;display:flex;align-items:center;gap:8px;}
+  .drawer-search input{background:none;border:none;outline:none;color:var(--white);font-size:13px;flex:1;font-family:var(--font-body);}
+  .drawer-search input::placeholder{color:#cfe6d8;}
+  .drawer-body{flex:1;overflow-y:auto;padding:8px 0 16px;}
+  .drawer-section-title{padding:14px 16px 6px;font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;}
+  .drawer-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;}
+  .drawer-item:hover{background:var(--green-050);}
+  .drawer-item .ic{font-size:16px;width:22px;text-align:center;}
+  .drawer-item .txt{flex:1;min-width:0;}
+  .drawer-item .txt .t1{font-size:13.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .drawer-item .txt .t2{font-size:11.5px;color:var(--ink-soft);}
+  .drawer-footer{padding:12px 16px;border-top:1px solid var(--border);}
+  .drawer-footer .drawer-item{padding:8px 0;}
+
+  /* ---------- SETTINGS ---------- */
+  #screen-settings{background:var(--white);}
+  .settings-body{padding:6px 18px;flex:1;}
+  .setting-block{padding:18px 0;border-bottom:1px solid var(--border);}
+  .setting-title{font-weight:700;font-size:14.5px;color:var(--ink);margin-bottom:10px;}
+  .setting-desc{font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;}
+  .fontsize-options{display:flex;gap:8px;}
+  .fontsize-opt{flex:1;padding:10px 0;text-align:center;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;font-weight:600;color:var(--ink-soft);}
+  .fontsize-opt.active{border-color:var(--green-900);color:var(--green-900);background:var(--green-050);}
+
+  ::-webkit-scrollbar{width:0;height:0;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===================== SPLASH ===================== -->
+  <div class="screen active" id="screen-splash">
+    <svg class="splash-mark" viewBox="0 0 100 100" fill="none" stroke="#ffffff" stroke-width="2.2">
+      <path d="M25 40 A25 25 0 0 1 75 40 L75 42 L25 42 Z"/>
+      <path d="M30 41 L60 30" stroke-width="1.6"/>
+      <circle cx="40" cy="52" r="9"/>
+      <circle cx="62" cy="52" r="9"/>
+      <path d="M36 50 q4 -3 8 0" stroke-width="1.6"/>
+      <path d="M58 48 a5 5 0 1 0 6 6 a6 6 0 0 1 -6 -6" fill="#ffffff" stroke="none"/>
+      <path d="M32 66 q16 12 32 0" stroke-width="2.4"/>
+    </svg>
+    <div class="splash-title">Pai<span class="accent">JO</span></div>
+    <div class="splash-sub">Bolo Dewe</div>
+    <div class="splash-footer">powered by. <b>IdeA1</b></div>
+  </div>
+
+  <!-- ===================== LOGIN ===================== -->
+  <div class="screen" id="screen-login">
+    <div class="login-topbar">
+      <button class="back-btn" onclick="goSplashBack()">‹ Kembali</button>
+      <div class="lang-toggle">
+        <span data-i18n="lang_jawa">Jawa</span>
+        <div class="switch on" id="loginLangSwitch" onclick="toggleLang()"></div>
+        <span data-i18n="lang_id">Indonesia</span>
+      </div>
+    </div>
+    <div class="login-center">
+      <svg class="login-mark" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.2">
+        <path d="M25 40 A25 25 0 0 1 75 40 L75 42 L25 42 Z"/>
+        <path d="M30 41 L60 30" stroke-width="1.6"/>
+        <circle cx="40" cy="52" r="9"/>
+        <circle cx="62" cy="52" r="9"/>
+        <path d="M36 50 q4 -3 8 0" stroke-width="1.6"/>
+        <path d="M58 48 a5 5 0 1 0 6 6 a6 6 0 0 1 -6 -6" fill="currentColor" stroke="none"/>
+        <path d="M32 66 q16 12 32 0" stroke-width="2.4"/>
+      </svg>
+      <div class="login-title">PaiJO</div>
+      <div class="login-sub">Bolo Dewe</div>
+
+      <div class="field"><input type="text" id="loginEmail" data-i18n-ph="ph_email" placeholder="Email / No. HP"></div>
+      <div class="field"><input type="password" id="loginPass" data-i18n-ph="ph_pass" placeholder="Password"></div>
+      <button class="btn-primary" data-i18n="btn_login" onclick="doLogin()">Masuk</button>
+      <div class="login-links">
+        <a href="#" data-i18n="link_forgot">Lupa Password?</a>
+        <a href="#" data-i18n="link_register">Daftar Akun Baru</a>
+      </div>
+    </div>
+    <div class="login-footer">
+      <div>v.1.1</div>
+      <div class="pwr">powered by. <b>IdeA1</b></div>
+    </div>
+  </div>
+
+  <!-- ===================== CHAT ===================== -->
+  <div class="screen" id="screen-chat">
+    <div class="app-header">
+      <div class="header-left">
+        <button class="hamburger" onclick="openDrawer()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <svg class="header-logo" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3">
+          <path d="M25 40 A25 25 0 0 1 75 40 L75 42 L25 42 Z"/>
+          <circle cx="40" cy="52" r="9"/><circle cx="62" cy="52" r="9"/>
+          <path d="M36 50 q4 -3 8 0" stroke-width="2"/>
+          <path d="M58 48 a5 5 0 1 0 6 6 a6 6 0 0 1 -6 -6" fill="currentColor" stroke="none"/>
+        </svg>
+        <div class="header-title">PaiJO</div>
+      </div>
+      <div class="header-right">
+        <button class="icon-btn" title="Pengaturan" onclick="showScreen('screen-settings')">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="chat-area" id="chatArea"></div>
+
+    <div class="music-player" id="musicPlayer">
+      <div class="music-cover" id="musicCover">🎵</div>
+      <div class="music-info">
+        <div class="music-label" data-i18n="now_playing">Sedang Diputar</div>
+        <div class="music-title" id="musicTitle">—</div>
+      </div>
+      <div class="music-controls">
+        <button class="fav" id="favBtn" onclick="toggleFav()">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.6-10-9.3C.6 8.1 2.4 4.5 6 4c2.1-.3 4 .8 6 3 2-2.2 3.9-3.3 6-3 3.6.5 5.4 4.1 4 7.7C19.5 16.4 12 21 12 21z" opacity="0.25"/><path id="favIcon" d="M12 21s-7.5-4.6-10-9.3C.6 8.1 2.4 4.5 6 4c2.1-.3 4 .8 6 3 2-2.2 3.9-3.3 6-3 3.6.5 5.4 4.1 4 7.7C19.5 16.4 12 21 12 21z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+        </button>
+        <button onclick="prevTrack()"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zM20 6L9 12l11 6z"/></svg></button>
+        <button onclick="togglePlay()" id="playBtn"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+        <button onclick="nextTrack()"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zM4 6l11 6-11 6z"/></svg></button>
+      </div>
+    </div>
+
+    <div class="input-bar">
+      <div class="attach-popup" id="attachPopup">
+        <button class="attach-opt" onclick="mockAttach('Kamera')"><span class="ic">📷</span>Kamera</button>
+        <button class="attach-opt" onclick="mockAttach('Foto')"><span class="ic">🖼️</span>Foto</button>
+        <button class="attach-opt" onclick="mockAttach('File')"><span class="ic">📁</span>File</button>
+      </div>
+      <button class="attach-btn" onclick="toggleAttach()">+</button>
+      <input type="text" id="chatInput" data-i18n-ph="ph_chat" placeholder="Ketik pesan..." onkeydown="if(event.key==='Enter')sendMessage()">
+      <button class="mic-btn" onclick="mockVoice()">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4"/></svg>
+      </button>
+      <button class="send-btn" onclick="sendMessage()">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ===================== SETTINGS ===================== -->
+  <div class="screen" id="screen-settings">
+    <div class="app-header">
+      <div class="header-left">
+        <button class="back-btn" onclick="showScreen('screen-chat')">‹</button>
+        <div class="header-title" data-i18n="settings_title">Pengaturan</div>
+      </div>
+      <div></div>
+    </div>
+    <div class="settings-body">
+      <div class="setting-block">
+        <div class="setting-title" data-i18n="settings_font_title">Ukuran Teks</div>
+        <div class="setting-desc" data-i18n="settings_font_desc">Perbesar teks supaya lebih mudah dibaca.</div>
+        <div class="fontsize-options">
+          <div class="fontsize-opt" data-size="0.9" onclick="setFontScale(this,0.9)">A</div>
+          <div class="fontsize-opt active" data-size="1" onclick="setFontScale(this,1)">A</div>
+          <div class="fontsize-opt" data-size="1.25" onclick="setFontScale(this,1.25)">A</div>
+          <div class="fontsize-opt" data-size="1.5" onclick="setFontScale(this,1.5)">A</div>
+        </div>
+      </div>
+      <div class="setting-block">
+        <div class="setting-title" data-i18n="settings_lang_title">Bahasa</div>
+        <div class="setting-desc" data-i18n="settings_lang_desc">Bahasa tampilan &amp; jawaban PaiJO.</div>
+        <div class="lang-toggle">
+          <span data-i18n="lang_jawa">Jawa</span>
+          <div class="switch on" id="settingsLangSwitch" onclick="toggleLang()"></div>
+          <span data-i18n="lang_id">Indonesia</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== DRAWER + OVERLAY ===================== -->
+  <div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+  <div class="drawer" id="drawer">
+    <div class="drawer-header">
+      <div class="brand">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3">
+          <path d="M25 40 A25 25 0 0 1 75 40 L75 42 L25 42 Z"/>
+          <circle cx="40" cy="52" r="9"/><circle cx="62" cy="52" r="9"/>
+        </svg>
+        <span>PaiJO – Bolo Dewe</span>
+      </div>
+      <div class="drawer-search">
+        🔍 <input type="text" id="drawerSearch" data-i18n-ph="ph_search" placeholder="Cari obrolan atau lagu..." oninput="filterDrawer()">
+      </div>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-section-title" data-i18n="drawer_playlist">🎵 Playlist Favorit</div>
+      <div id="favList"></div>
+
+      <div class="drawer-section-title" data-i18n="drawer_history">💬 Riwayat Obrolan</div>
+      <div id="historyList"></div>
+    </div>
+    <div class="drawer-footer">
+      <div class="drawer-item" onclick="showScreen('screen-settings');closeDrawer();">
+        <span class="ic">⚙️</span><span class="txt"><span class="t1" data-i18n="settings_title">Pengaturan</span></span>
+      </div>
+      <div class="drawer-item" onclick="doLogout()">
+        <span class="ic">🚪</span><span class="txt"><span class="t1" data-i18n="logout">Keluar</span></span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ============ I18N ============ */
+const I18N = {
+  id:{
+    lang_jawa:"Jawa", lang_id:"Indonesia",
+    ph_email:"Email / No. HP", ph_pass:"Password", btn_login:"Masuk",
+    link_forgot:"Lupa Password?", link_register:"Daftar Akun Baru",
+    ph_chat:"Ketik pesan...", ph_search:"Cari obrolan atau lagu...",
+    now_playing:"Sedang Diputar", settings_title:"Pengaturan",
+    settings_font_title:"Ukuran Teks", settings_font_desc:"Perbesar teks supaya lebih mudah dibaca.",
+    settings_lang_title:"Bahasa", settings_lang_desc:"Bahasa tampilan & jawaban PaiJO.",
+    drawer_playlist:"🎵 Playlist Favorit", drawer_history:"💬 Riwayat Obrolan", logout:"Keluar",
+    greeting:"Halo! Aku PaiJO, bolo dewe-mu. Ada yang bisa dibantu hari ini?",
+    mock_reply:"Nggih, siap! (Ini masih respons simulasi — nanti setelah API Claude tersambung, PaiJO akan menjawab sungguhan ya.)",
+    music_reply:"Oke, tak putarke lagu yang santai ya!",
+  },
+  jw:{
+    lang_jawa:"Jawa", lang_id:"Indonesia",
+    ph_email:"Email / No. HP", ph_pass:"Sandi", btn_login:"Mlebu",
+    link_forgot:"Lali Sandi?", link_register:"Daftar Akun Anyar",
+    ph_chat:"Tulis pesen...", ph_search:"Golek obrolan utawa lagu...",
+    now_playing:"Lagi Diputer", settings_title:"Setelan",
+    settings_font_title:"Ukuran Tulisan", settings_font_desc:"Gedhekno tulisan ben luwih gampang diwaca.",
+    settings_lang_title:"Basa", settings_lang_desc:"Basa tampilan & wangsulane PaiJO.",
+    drawer_playlist:"🎵 Playlist Favorit", drawer_history:"💬 Riwayat Obrolan", logout:"Metu",
+    greeting:"Nggih, kancaku! Aku PaiJO, bolo dewe-mu. Ono sing iso tak bantu dino iki?",
+    mock_reply:"Nggih, siap kancaku! (Iki isih respons simulasi — mengko yen API Claude wis kesambung, PaiJO bakal njawab tenanan.)",
+    music_reply:"Oke, tak setelke lagu sing santai ya!",
+  }
+};
+let currentLang = "jw"; // default sesuai toggle "on" = Jawa
+
+function toggleLang(){
+  currentLang = currentLang === "jw" ? "id" : "jw";
+  document.getElementById('loginLangSwitch').classList.toggle('on', currentLang==='jw');
+  document.getElementById('settingsLangSwitch').classList.toggle('on', currentLang==='jw');
+  applyI18n();
+}
+function applyI18n(){
+  const dict = I18N[currentLang];
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key = el.getAttribute('data-i18n');
+    if(dict[key]) el.textContent = dict[key];
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{
+    const key = el.getAttribute('data-i18n-ph');
+    if(dict[key]) el.placeholder = dict[key];
+  });
+}
+
+/* ============ NAVIGATION ============ */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function goSplashBack(){ showScreen('screen-splash'); setTimeout(()=>showScreen('screen-login'), 400); }
+
+function doLogin(){
+  showScreen('screen-chat');
+  if(chatHistory.length===0){
+    addBotMessage(I18N[currentLang].greeting);
+  }
+}
+function doLogout(){
+  closeDrawer();
+  showScreen('screen-login');
+}
+
+window.addEventListener('DOMContentLoaded', ()=>{
+  applyI18n();
+  renderHistory();
+  renderFav();
+  setTimeout(()=>{ showScreen('screen-login'); }, 1800);
+});
+
+/* ============ DRAWER ============ */
+function openDrawer(){
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('drawer').classList.add('show');
+}
+function closeDrawer(){
+  document.getElementById('overlay').classList.remove('show');
+  document.getElementById('drawer').classList.remove('show');
+}
+function filterDrawer(){
+  const q = document.getElementById('drawerSearch').value.toLowerCase();
+  document.querySelectorAll('#historyList .drawer-item, #favList .drawer-item').forEach(item=>{
+    const txt = item.querySelector('.t1').textContent.toLowerCase();
+    item.style.display = txt.includes(q) ? 'flex' : 'none';
+  });
+}
+
+/* ============ CHAT ============ */
+let chatHistory = []; // {role, text, lang}
+function addUserMessage(text){
+  chatHistory.push({role:'user', text, lang: currentLang});
+  renderChat();
+  saveHistoryEntry(text);
+}
+function addBotMessage(text){
+  chatHistory.push({role:'bot', text, lang: currentLang});
+  renderChat();
+}
+function renderChat(){
+  const area = document.getElementById('chatArea');
+  area.innerHTML = '';
+  chatHistory.forEach(m=>{
+    const row = document.createElement('div');
+    row.className = 'msg-row ' + (m.role==='user'?'user':'bot');
+    const langLbl = document.createElement('div');
+    langLbl.className = 'msg-lang';
+    langLbl.textContent = m.lang === 'jw' ? 'Jawa' : 'Indonesia';
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = m.text;
+    row.appendChild(langLbl);
+    row.appendChild(bubble);
+    area.appendChild(row);
+  });
+  area.scrollTop = area.scrollHeight;
+}
+
+function sendMessage(){
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if(!text) return;
+  addUserMessage(text);
+  input.value = '';
+  toggleAttach(true);
+
+  // simulasi "sedang mengetik"
+  const area = document.getElementById('chatArea');
+  const typingRow = document.createElement('div');
+  typingRow.className = 'msg-row bot';
+  typingRow.innerHTML = '<div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>';
+  typingRow.id = 'typingRow';
+  area.appendChild(typingRow);
+  area.scrollTop = area.scrollHeight;
+
+  setTimeout(()=>{
+    const t = document.getElementById('typingRow');
+    if(t) t.remove();
+    const lower = text.toLowerCase();
+    if(lower.includes('lagu') || lower.includes('musik') || lower.includes('setel')){
+      addBotMessage(I18N[currentLang].music_reply);
+      playMockTrack();
+    } else if(lower.includes('gambar') || lower.includes('foto') && lower.includes('gawe')){
+      addBotMessage(I18N[currentLang].mock_reply);
+    } else {
+      addBotMessage(I18N[currentLang].mock_reply);
+    }
+  }, 900);
+}
+
+function saveHistoryEntry(text){
+  const shortText = text.length > 40 ? text.slice(0,40)+'…' : text;
+  historyEntries.unshift({title: shortText, time: 'Baru saja'});
+  renderHistory();
+}
+
+/* ============ ATTACHMENT ============ */
+function toggleAttach(forceClose){
+  const pop = document.getElementById('attachPopup');
+  if(forceClose){ pop.classList.remove('show'); return; }
+  pop.classList.toggle('show');
+}
+function mockAttach(type){
+  toggleAttach(true);
+  addBotMessage((currentLang==='jw'?'Fitur '+type+' isih durung kesambung, mengko yo!':'Fitur '+type+' belum tersambung, nanti ya!'));
+}
+function mockVoice(){
+  addBotMessage(currentLang==='jw'?'Fitur rekam swara isih durung kesambung — mengko dientukke pas backend wis siap.':'Fitur rekam suara belum tersambung — nanti diaktifkan setelah backend siap.');
+}
+
+/* ============ MUSIC PLAYER (mock) ============ */
+const mockTracks = [
+  {title:'"Tembang Kangen" - Denny Caknan', emoji:'🎧'},
+  {title:'"Kartonyono Medot Janji" - Denny Caknan', emoji:'🎧'},
+  {title:'"Los Dol" - Denny Caknan', emoji:'🎧'},
+];
+let trackIndex = 0;
+let isPlaying = true;
+let favEntries = [];
+let historyEntries = [];
+
+function playMockTrack(){
+  document.getElementById('musicPlayer').classList.add('show');
+  document.getElementById('musicTitle').textContent = mockTracks[trackIndex].title;
+  isPlaying = true;
+  updatePlayBtn();
+}
+function togglePlay(){
+  isPlaying = !isPlaying;
+  updatePlayBtn();
+}
+function updatePlayBtn(){
+  document.getElementById('playBtn').innerHTML = isPlaying
+    ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>'
+    : '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+}
+function nextTrack(){ trackIndex = (trackIndex+1) % mockTracks.length; document.getElementById('musicTitle').textContent = mockTracks[trackIndex].title; resetFavIcon(); }
+function prevTrack(){ trackIndex = (trackIndex-1+mockTracks.length) % mockTracks.length; document.getElementById('musicTitle').textContent = mockTracks[trackIndex].title; resetFavIcon(); }
+function resetFavIcon(){ document.getElementById('favBtn').classList.remove('active'); }
+function toggleFav(){
+  const btn = document.getElementById('favBtn');
+  btn.classList.toggle('active');
+  const track = mockTracks[trackIndex];
+  if(btn.classList.contains('active')){
+    if(!favEntries.find(f=>f.title===track.title)){
+      favEntries.unshift({title: track.title});
+      renderFav();
+    }
+  }
+}
+
+/* ============ DRAWER LISTS ============ */
+function renderFav(){
+  const el = document.getElementById('favList');
+  if(favEntries.length===0){
+    el.innerHTML = '<div class="drawer-item"><span class="txt"><span class="t2">Belum ada lagu favorit</span></span></div>';
+    return;
+  }
+  el.innerHTML = favEntries.map(f=>`
+    <div class="drawer-item">
+      <span class="ic">🎧</span>
+      <span class="txt"><span class="t1">${f.title}</span></span>
+    </div>`).join('');
+}
+function renderHistory(){
+  const el = document.getElementById('historyList');
+  if(historyEntries.length===0){
+    el.innerHTML = '<div class="drawer-item"><span class="txt"><span class="t2">Belum ada obrolan</span></span></div>';
+    return;
+  }
+  el.innerHTML = historyEntries.map(h=>`
+    <div class="drawer-item">
+      <span class="ic">💬</span>
+      <span class="txt"><span class="t1">${h.title}</span><span class="t2">${h.time}</span></span>
+    </div>`).join('');
+}
+
+/* ============ SETTINGS: FONT SIZE ============ */
+function setFontScale(el, scale){
+  document.querySelectorAll('.fontsize-opt').forEach(o=>o.classList.remove('active'));
+  el.classList.add('active');
+  document.documentElement.style.setProperty('--font-scale', scale);
+}
+</script>
+</body>
+</html>
