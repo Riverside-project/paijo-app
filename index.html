@@ -266,7 +266,7 @@
       <button class="btn-primary" data-i18n="btn_login" onclick="doLogin()">Masuk</button>
       <div class="login-links">
         <a href="#" data-i18n="link_forgot">Lupa Password?</a>
-        <a href="#" data-i18n="link_register">Daftar Akun Baru</a>
+        <a href="#" onclick="event.preventDefault();doRegister()" data-i18n="link_register">Daftar Akun Baru</a>
       </div>
     </div>
     <div class="login-footer">
@@ -398,6 +398,14 @@
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+const SUPABASE_URL = 'https://onlyaswqnttkrqzsuxvs.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ubHlhc3dxbnR0a3JxenN1eHZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3OTU5NDcsImV4cCI6MjEwMDM3MTk0N30.MMVSQ8He8_sT4H6vHgFBy4vDdHlH4S9fqCEEnZwEyfg';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let currentUser = null;
+let currentConversationId = null;
+</script>
 <script>
 /* ============ I18N ============ */
 const I18N = {
@@ -435,6 +443,10 @@ function toggleLang(){
   document.getElementById('loginLangSwitch').classList.toggle('on', currentLang==='jw');
   document.getElementById('settingsLangSwitch').classList.toggle('on', currentLang==='jw');
   applyI18n();
+  if(currentUser){
+    sb.from('profiles').update({ preferred_lang: currentLang }).eq('id', currentUser.id)
+      .then(()=>{}, (e)=>console.log('Gagal simpan bahasa:', e));
+  }
 }
 function applyI18n(){
   const dict = I18N[currentLang];
@@ -455,22 +467,137 @@ function showScreen(id){
 }
 function goSplashBack(){ showScreen('screen-splash'); setTimeout(()=>showScreen('screen-login'), 400); }
 
-function doLogin(){
-  showScreen('screen-chat');
-  if(chatHistory.length===0){
-    addBotMessage(I18N[currentLang].greeting);
+function setLoginBusy(busy, msg){
+  const btn = document.querySelector('#screen-login .btn-primary');
+  if(!btn) return;
+  btn.disabled = busy;
+  btn.textContent = msg || I18N[currentLang].btn_login;
+}
+
+async function doLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  if(!email || !pass){
+    alert(currentLang==='jw' ? 'Isi dhisik email lan sandi ya.' : 'Isi dulu email dan sandi ya.');
+    return;
+  }
+  setLoginBusy(true, '...');
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if(error){
+    setLoginBusy(false);
+    if(error.message.toLowerCase().includes('invalid')){
+      const wantRegister = confirm(
+        (currentLang==='jw'
+          ? 'Email/sandi durung kedaftar utawa salah. Daftar akun anyar saiki?'
+          : 'Email/sandi belum terdaftar atau salah. Daftar akun baru sekarang?')
+      );
+      if(wantRegister) await doRegister();
+    } else {
+      alert(error.message);
+    }
+    return;
+  }
+  currentUser = data.user;
+  setLoginBusy(false);
+  await loadUserDataAndEnterChat();
+}
+
+async function doRegister(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  if(!email || !pass){
+    alert(currentLang==='jw' ? 'Isi dhisik email lan sandi ya.' : 'Isi dulu email dan sandi ya.');
+    return;
+  }
+  setLoginBusy(true, '...');
+  const { data, error } = await sb.auth.signUp({ email, password: pass });
+  setLoginBusy(false);
+  if(error){ alert(error.message); return; }
+  if(data.session){
+    currentUser = data.user;
+    await loadUserDataAndEnterChat();
+  } else {
+    alert(currentLang==='jw'
+      ? 'Akun kedaftar! Cek email kanggo konfirmasi, banjur mlebu maneh.'
+      : 'Akun terdaftar! Cek email untuk konfirmasi, lalu login lagi.');
   }
 }
-function doLogout(){
+
+async function loadUserDataAndEnterChat(){
+  // muat profil (bahasa & ukuran teks pilihan user)
+  const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
+  if(profile){
+    if(profile.preferred_lang && profile.preferred_lang !== currentLang){
+      currentLang = profile.preferred_lang;
+    }
+    if(profile.font_scale){
+      document.documentElement.style.setProperty('--font-scale', profile.font_scale);
+    }
+  }
+  document.getElementById('loginLangSwitch').classList.toggle('on', currentLang==='jw');
+  document.getElementById('settingsLangSwitch').classList.toggle('on', currentLang==='jw');
+  applyI18n();
+
+  // ambil / bikin 1 percakapan aktif untuk user ini
+  let { data: convos } = await sb.from('conversations')
+    .select('*').eq('user_id', currentUser.id)
+    .order('updated_at', { ascending:false }).limit(1);
+
+  if(convos && convos.length > 0){
+    currentConversationId = convos[0].id;
+  } else {
+    const { data: newConvo } = await sb.from('conversations')
+      .insert({ user_id: currentUser.id, title:'Obrolan pertama' })
+      .select().single();
+    currentConversationId = newConvo.id;
+  }
+
+  // muat pesan-pesan sebelumnya
+  const { data: msgs } = await sb.from('messages')
+    .select('*').eq('conversation_id', currentConversationId)
+    .order('created_at', { ascending:true });
+  chatHistory = (msgs || []).map(m => ({ role:m.role, text:m.content, lang:m.lang }));
+
+  // muat favorit
+  const { data: favs } = await sb.from('favorites')
+    .select('*').eq('user_id', currentUser.id).order('created_at', { ascending:false });
+  favEntries = (favs || []).map(f => ({ title:f.track_title, id:f.id }));
+
+  showScreen('screen-chat');
+  if(chatHistory.length===0){
+    await addBotMessage(I18N[currentLang].greeting);
+  } else {
+    renderChat();
+  }
+  renderFav();
+  renderHistory();
+}
+
+async function doLogout(){
   closeDrawer();
+  await sb.auth.signOut();
+  currentUser = null;
+  currentConversationId = null;
+  chatHistory = [];
+  favEntries = [];
+  historyEntries = [];
   showScreen('screen-login');
 }
 
-window.addEventListener('DOMContentLoaded', ()=>{
+window.addEventListener('DOMContentLoaded', async ()=>{
   applyI18n();
   renderHistory();
   renderFav();
-  setTimeout(()=>{ showScreen('screen-login'); }, 1800);
+
+  // cek apakah user sudah login sebelumnya (sesi tersimpan otomatis oleh Supabase)
+  const { data: { session } } = await sb.auth.getSession();
+  if(session){
+    currentUser = session.user;
+    showScreen('screen-splash');
+    await loadUserDataAndEnterChat();
+  } else {
+    setTimeout(()=>{ showScreen('screen-login'); }, 1800);
+  }
 });
 
 /* ============ DRAWER ============ */
@@ -492,14 +619,25 @@ function filterDrawer(){
 
 /* ============ CHAT ============ */
 let chatHistory = []; // {role, text, lang}
-function addUserMessage(text){
+async function addUserMessage(text){
   chatHistory.push({role:'user', text, lang: currentLang});
   renderChat();
   saveHistoryEntry(text);
+  if(currentConversationId){
+    try{
+      await sb.from('messages').insert({ conversation_id: currentConversationId, role:'user', content:text, lang: currentLang });
+      await sb.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', currentConversationId);
+    }catch(e){ console.log('Gagal simpan pesan user:', e); }
+  }
 }
-function addBotMessage(text){
+async function addBotMessage(text){
   chatHistory.push({role:'bot', text, lang: currentLang});
   renderChat();
+  if(currentConversationId){
+    try{
+      await sb.from('messages').insert({ conversation_id: currentConversationId, role:'bot', content:text, lang: currentLang });
+    }catch(e){ console.log('Gagal simpan pesan bot:', e); }
+  }
 }
 function renderChat(){
   const area = document.getElementById('chatArea');
@@ -520,13 +658,13 @@ function renderChat(){
   area.scrollTop = area.scrollHeight;
 }
 
-function sendMessage(){
+async function sendMessage(){
   const input = document.getElementById('chatInput');
   const text = input.value.trim();
   if(!text) return;
-  addUserMessage(text);
   input.value = '';
   toggleAttach(true);
+  await addUserMessage(text);
 
   // simulasi "sedang mengetik"
   const area = document.getElementById('chatArea');
@@ -537,17 +675,15 @@ function sendMessage(){
   area.appendChild(typingRow);
   area.scrollTop = area.scrollHeight;
 
-  setTimeout(()=>{
+  setTimeout(async ()=>{
     const t = document.getElementById('typingRow');
     if(t) t.remove();
     const lower = text.toLowerCase();
     if(lower.includes('lagu') || lower.includes('musik') || lower.includes('setel')){
-      addBotMessage(I18N[currentLang].music_reply);
+      await addBotMessage(I18N[currentLang].music_reply);
       playMockTrack();
-    } else if(lower.includes('gambar') || lower.includes('foto') && lower.includes('gawe')){
-      addBotMessage(I18N[currentLang].mock_reply);
     } else {
-      addBotMessage(I18N[currentLang].mock_reply);
+      await addBotMessage(I18N[currentLang].mock_reply);
     }
   }, 900);
 }
@@ -588,6 +724,7 @@ function playMockTrack(){
   document.getElementById('musicTitle').textContent = mockTracks[trackIndex].title;
   isPlaying = true;
   updatePlayBtn();
+  syncFavIcon();
 }
 function togglePlay(){
   isPlaying = !isPlaying;
@@ -598,18 +735,36 @@ function updatePlayBtn(){
     ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>'
     : '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
 }
-function nextTrack(){ trackIndex = (trackIndex+1) % mockTracks.length; document.getElementById('musicTitle').textContent = mockTracks[trackIndex].title; resetFavIcon(); }
-function prevTrack(){ trackIndex = (trackIndex-1+mockTracks.length) % mockTracks.length; document.getElementById('musicTitle').textContent = mockTracks[trackIndex].title; resetFavIcon(); }
-function resetFavIcon(){ document.getElementById('favBtn').classList.remove('active'); }
-function toggleFav(){
-  const btn = document.getElementById('favBtn');
-  btn.classList.toggle('active');
+function nextTrack(){ trackIndex = (trackIndex+1) % mockTracks.length; document.getElementById('musicTitle').textContent = mockTracks[trackIndex].title; syncFavIcon(); }
+function prevTrack(){ trackIndex = (trackIndex-1+mockTracks.length) % mockTracks.length; document.getElementById('musicTitle').textContent = mockTracks[trackIndex].title; syncFavIcon(); }
+function syncFavIcon(){
   const track = mockTracks[trackIndex];
-  if(btn.classList.contains('active')){
-    if(!favEntries.find(f=>f.title===track.title)){
-      favEntries.unshift({title: track.title});
-      renderFav();
+  const isFav = favEntries.some(f=>f.title===track.title);
+  document.getElementById('favBtn').classList.toggle('active', isFav);
+}
+async function toggleFav(){
+  const btn = document.getElementById('favBtn');
+  const track = mockTracks[trackIndex];
+  const existing = favEntries.find(f=>f.title===track.title);
+
+  if(!existing){
+    btn.classList.add('active');
+    favEntries.unshift({title: track.title, id:null});
+    renderFav();
+    if(currentUser){
+      const { data } = await sb.from('favorites')
+        .insert({ user_id: currentUser.id, track_title: track.title })
+        .select().single();
+      if(data){
+        const entry = favEntries.find(f=>f.title===track.title);
+        if(entry) entry.id = data.id;
+      }
     }
+  } else {
+    btn.classList.remove('active');
+    favEntries = favEntries.filter(f=>f.title!==track.title);
+    renderFav();
+    if(existing.id) await sb.from('favorites').delete().eq('id', existing.id);
   }
 }
 
@@ -644,6 +799,10 @@ function setFontScale(el, scale){
   document.querySelectorAll('.fontsize-opt').forEach(o=>o.classList.remove('active'));
   el.classList.add('active');
   document.documentElement.style.setProperty('--font-scale', scale);
+  if(currentUser){
+    sb.from('profiles').update({ font_scale: scale }).eq('id', currentUser.id)
+      .then(()=>{}, (e)=>console.log('Gagal simpan ukuran teks:', e));
+  }
 }
 
 /* ============ PWA: SERVICE WORKER ============ */
