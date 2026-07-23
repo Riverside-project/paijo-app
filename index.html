@@ -704,17 +704,37 @@ async function sendMessage(){
   area.appendChild(typingRow);
   area.scrollTop = area.scrollHeight;
 
-  setTimeout(async ()=>{
+  const lower = text.toLowerCase();
+  const isMusicRequest = lower.includes('lagu') || lower.includes('musik') || lower.includes('setel');
+
+  try{
+    const recentHistory = chatHistory.slice(0, -1).slice(-10); // riwayat sebelum pesan yang baru dikirim
+    const { data, error } = await sb.functions.invoke('chat', {
+      body: { message: text, lang: currentLang, history: recentHistory }
+    });
+
     const t = document.getElementById('typingRow');
     if(t) t.remove();
-    const lower = text.toLowerCase();
-    if(lower.includes('lagu') || lower.includes('musik') || lower.includes('setel')){
-      await addBotMessage(I18N[currentLang].music_reply);
+
+    if(error) throw error;
+
+    const reply = (data && data.reply) ? data.reply : I18N[currentLang].mock_reply;
+    await addBotMessage(reply);
+
+    if(isMusicRequest){
       playMockTrack();
-    } else {
-      await addBotMessage(I18N[currentLang].mock_reply);
     }
-  }, 900);
+  }catch(e){
+    console.error('Gagal memanggil chat function:', e);
+    const t = document.getElementById('typingRow');
+    if(t) t.remove();
+    await addBotMessage(
+      currentLang==='jw'
+        ? 'Ngapunten kancaku, lagi ana gangguan nyambung menyang server. Coba maneh sedhela ya.'
+        : 'Maaf temanku, lagi ada gangguan koneksi ke server. Coba lagi sebentar ya.'
+    );
+    if(isMusicRequest) playMockTrack();
+  }
 }
 
 function saveHistoryEntry(text){
