@@ -524,44 +524,62 @@ async function doRegister(){
 }
 
 async function loadUserDataAndEnterChat(){
+  const errors = [];
+
   // muat profil (bahasa & ukuran teks pilihan user)
-  const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
-  if(profile){
-    if(profile.preferred_lang && profile.preferred_lang !== currentLang){
-      currentLang = profile.preferred_lang;
+  try{
+    const { data: profile, error } = await sb.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
+    if(error) throw error;
+    if(profile){
+      if(profile.preferred_lang && profile.preferred_lang !== currentLang){
+        currentLang = profile.preferred_lang;
+      }
+      if(profile.font_scale){
+        document.documentElement.style.setProperty('--font-scale', profile.font_scale);
+      }
     }
-    if(profile.font_scale){
-      document.documentElement.style.setProperty('--font-scale', profile.font_scale);
-    }
-  }
+  }catch(e){ errors.push('profiles: '+e.message); console.error('profiles error', e); }
+
   document.getElementById('loginLangSwitch').classList.toggle('on', currentLang==='jw');
   document.getElementById('settingsLangSwitch').classList.toggle('on', currentLang==='jw');
   applyI18n();
 
   // ambil / bikin 1 percakapan aktif untuk user ini
-  let { data: convos } = await sb.from('conversations')
-    .select('*').eq('user_id', currentUser.id)
-    .order('updated_at', { ascending:false }).limit(1);
+  try{
+    let { data: convos, error } = await sb.from('conversations')
+      .select('*').eq('user_id', currentUser.id)
+      .order('updated_at', { ascending:false }).limit(1);
+    if(error) throw error;
 
-  if(convos && convos.length > 0){
-    currentConversationId = convos[0].id;
-  } else {
-    const { data: newConvo } = await sb.from('conversations')
-      .insert({ user_id: currentUser.id, title:'Obrolan pertama' })
-      .select().single();
-    currentConversationId = newConvo.id;
-  }
+    if(convos && convos.length > 0){
+      currentConversationId = convos[0].id;
+    } else {
+      const { data: newConvo, error: insertErr } = await sb.from('conversations')
+        .insert({ user_id: currentUser.id, title:'Obrolan pertama' })
+        .select().single();
+      if(insertErr) throw insertErr;
+      currentConversationId = newConvo.id;
+    }
+  }catch(e){ errors.push('conversations: '+e.message); console.error('conversations error', e); }
 
   // muat pesan-pesan sebelumnya
-  const { data: msgs } = await sb.from('messages')
-    .select('*').eq('conversation_id', currentConversationId)
-    .order('created_at', { ascending:true });
-  chatHistory = (msgs || []).map(m => ({ role:m.role, text:m.content, lang:m.lang }));
+  try{
+    if(currentConversationId){
+      const { data: msgs, error } = await sb.from('messages')
+        .select('*').eq('conversation_id', currentConversationId)
+        .order('created_at', { ascending:true });
+      if(error) throw error;
+      chatHistory = (msgs || []).map(m => ({ role:m.role, text:m.content, lang:m.lang }));
+    }
+  }catch(e){ errors.push('messages: '+e.message); console.error('messages error', e); }
 
   // muat favorit
-  const { data: favs } = await sb.from('favorites')
-    .select('*').eq('user_id', currentUser.id).order('created_at', { ascending:false });
-  favEntries = (favs || []).map(f => ({ title:f.track_title, id:f.id }));
+  try{
+    const { data: favs, error } = await sb.from('favorites')
+      .select('*').eq('user_id', currentUser.id).order('created_at', { ascending:false });
+    if(error) throw error;
+    favEntries = (favs || []).map(f => ({ title:f.track_title, id:f.id }));
+  }catch(e){ errors.push('favorites: '+e.message); console.error('favorites error', e); }
 
   showScreen('screen-chat');
   if(chatHistory.length===0){
@@ -571,6 +589,10 @@ async function loadUserDataAndEnterChat(){
   }
   renderFav();
   renderHistory();
+
+  if(errors.length > 0){
+    alert('Ada kendala waktu memuat data:\n' + errors.join('\n'));
+  }
 }
 
 async function doLogout(){
@@ -590,13 +612,20 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   renderFav();
 
   // cek apakah user sudah login sebelumnya (sesi tersimpan otomatis oleh Supabase)
-  const { data: { session } } = await sb.auth.getSession();
-  if(session){
-    currentUser = session.user;
-    showScreen('screen-splash');
-    await loadUserDataAndEnterChat();
-  } else {
-    setTimeout(()=>{ showScreen('screen-login'); }, 1800);
+  try{
+    const { data: { session }, error } = await sb.auth.getSession();
+    if(error) throw error;
+    if(session){
+      currentUser = session.user;
+      showScreen('screen-splash');
+      await loadUserDataAndEnterChat();
+    } else {
+      setTimeout(()=>{ showScreen('screen-login'); }, 1800);
+    }
+  }catch(e){
+    console.error('Gagal cek sesi:', e);
+    alert('Gagal memuat sesi: ' + e.message);
+    showScreen('screen-login');
   }
 });
 
