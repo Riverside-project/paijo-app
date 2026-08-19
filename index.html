@@ -241,6 +241,21 @@
   .kal-kliwon-item .kk-date{color:var(--ink-soft);}
   .kal-note{background:var(--green-050);border:none;}
   .kal-note-text{font-size:12px;color:var(--ink-soft);line-height:1.6;font-style:italic;}
+
+  /* ---------- KAMUS JAWA ---------- */
+  #screen-kamus{background:var(--bg);}
+  .kamus-search-bar{padding:12px 16px;background:var(--white);border-bottom:1px solid var(--border);}
+  .kamus-search-input{width:100%;padding:11px 16px;border:1.5px solid var(--border);border-radius:20px;font-size:14px;font-family:var(--font-body);outline:none;}
+  .kamus-search-input:focus{border-color:var(--green-600);}
+  .kamus-categories{display:flex;gap:8px;padding:10px 16px;overflow-x:auto;background:var(--white);border-bottom:1px solid var(--border);}
+  .kamus-cat-chip{flex-shrink:0;padding:7px 14px;border-radius:20px;background:var(--green-050);color:var(--green-900);font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;border:1.5px solid transparent;}
+  .kamus-cat-chip.active{background:var(--green-900);color:var(--white);}
+  .kamus-list{flex:1;overflow-y:auto;padding:8px 16px 20px;}
+  .kamus-item{padding:12px 0;border-bottom:1px solid var(--border);}
+  .kamus-item .ki-jw{font-family:var(--font-display);font-weight:700;font-size:15.5px;color:var(--green-900);}
+  .kamus-item .ki-id{font-size:13.5px;color:var(--ink);margin-top:2px;}
+  .kamus-item .ki-cat{font-size:10.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;margin-top:4px;}
+  .kamus-empty{text-align:center;color:var(--ink-soft);font-size:13.5px;padding:40px 20px;}
 </style>
 </head>
 <body>
@@ -394,6 +409,22 @@
     </div>
   </div>
 
+  <!-- ===================== KAMUS MINI JAWA-INDONESIA ===================== -->
+  <div class="screen" id="screen-kamus">
+    <div class="app-header">
+      <div class="header-left">
+        <button class="back-btn" onclick="showScreen('screen-chat')">‹</button>
+        <div class="header-title" data-i18n="kamus_title">Kamus Jawa</div>
+      </div>
+      <div></div>
+    </div>
+    <div class="kamus-search-bar">
+      <input type="text" id="kamusSearch" class="kamus-search-input" data-i18n-ph="kamus_search_ph" placeholder="Golek tembung Jawa utawa Indonesia..." oninput="renderKamusList()">
+    </div>
+    <div class="kamus-categories" id="kamusCategories"></div>
+    <div class="kamus-list" id="kamusList"></div>
+  </div>
+
   <div class="screen" id="screen-settings">
     <div class="app-header">
       <div class="header-left">
@@ -448,6 +479,9 @@
       <div id="historyList"></div>
     </div>
     <div class="drawer-footer">
+      <div class="drawer-item" onclick="showScreen('screen-kamus');closeDrawer();renderKamusList();">
+        <span class="ic">📖</span><span class="txt"><span class="t1" data-i18n="kamus_title">Kamus Jawa</span></span>
+      </div>
       <div class="drawer-item" onclick="showScreen('screen-kalender');closeDrawer();renderKalender();">
         <span class="ic">📅</span><span class="txt"><span class="t1" data-i18n="kalender_title">Kalender Jawa</span></span>
       </div>
@@ -490,6 +524,7 @@ const I18N = {
     kalender_calc_btn:"Hitung Weton",
     kalender_kliwon_title:"Selasa/Jumat Kliwon Mendatang", kalender_kliwon_desc:"Menurut kepercayaan Jawa, hari Kliwon (terutama Selasa Kliwon dan Jumat Kliwon) dianggap hari yang sakral.",
     kalender_disclaimer:"Info ini berdasarkan tradisi dan kepercayaan budaya Jawa, bukan ramalan yang pasti terjadi. Digunakan untuk melestarikan budaya saja ya, temanku.",
+    kamus_title:"Kamus Jawa", kamus_search_ph:"Cari kata Jawa atau Indonesia...",
   },
   jw:{
     lang_jawa:"Jawa", lang_id:"Indonesia",
@@ -508,6 +543,7 @@ const I18N = {
     kalender_calc_btn:"Hitung Weton",
     kalender_kliwon_title:"Selasa/Jumat Kliwon Ngarep", kalender_kliwon_desc:"Miturut kapercayan Jawa, dina Kliwon (utamane Selasa Kliwon lan Jumat Kliwon) dianggep dina sing sakral.",
     kalender_disclaimer:"Info iki adhedhasar tradisi lan kapercayan budaya Jawa, dudu ramalan sing mesthi kedadeyan. Digunakke kanggo nguri-uri budaya wae, ya kancaku.",
+    kamus_title:"Kamus Jawa", kamus_search_ph:"Golek tembung Jawa utawa Indonesia...",
   }
 };
 let currentLang = "jw"; // default sesuai toggle "on" = Jawa
@@ -1023,6 +1059,151 @@ function hitungWeton(){
     <div class="kr-neptu">Neptu: ${NEPTU_HARI[w.hari]} + ${NEPTU_PASARAN[w.pasaran]} = ${w.neptu}</div>
     <div class="kr-watak">${watakByNeptu(w.neptu)}</div>
   `;
+}
+
+/* ============ KAMUS JAWA-INDONESIA ============ */
+const KAMUS_DATA = [
+  // Sapaan & Sopan Santun
+  {jw:'sugeng enjing', id:'selamat pagi', cat:'Sapaan'},
+  {jw:'sugeng siang', id:'selamat siang', cat:'Sapaan'},
+  {jw:'sugeng sonten', id:'selamat sore', cat:'Sapaan'},
+  {jw:'sugeng dalu', id:'selamat malam', cat:'Sapaan'},
+  {jw:'matur nuwun', id:'terima kasih', cat:'Sapaan'},
+  {jw:'sami-sami', id:'sama-sama', cat:'Sapaan'},
+  {jw:'nuwun sewu', id:'permisi / mohon maaf', cat:'Sapaan'},
+  {jw:'pripun kabare', id:'bagaimana kabarnya', cat:'Sapaan'},
+  {jw:'mangga', id:'silakan', cat:'Sapaan'},
+  {jw:'inggih / nggih', id:'iya', cat:'Sapaan'},
+  {jw:'boten / ora', id:'tidak', cat:'Sapaan'},
+  {jw:'kula nuwun', id:'permisi (saat masuk rumah orang)', cat:'Sapaan'},
+
+  // Keluarga
+  {jw:'bapak', id:'ayah', cat:'Keluarga'},
+  {jw:'ibu / simbok', id:'ibu', cat:'Keluarga'},
+  {jw:'mbah kakung', id:'kakek', cat:'Keluarga'},
+  {jw:'mbah putri', id:'nenek', cat:'Keluarga'},
+  {jw:'kakang / mas', id:'kakak laki-laki', cat:'Keluarga'},
+  {jw:'mbakyu / mbak', id:'kakak perempuan', cat:'Keluarga'},
+  {jw:'adhi / adik', id:'adik', cat:'Keluarga'},
+  {jw:'anak', id:'anak', cat:'Keluarga'},
+  {jw:'bojo', id:'pasangan (suami/istri)', cat:'Keluarga'},
+  {jw:'pakdhe', id:'paman (kakak dari ayah/ibu)', cat:'Keluarga'},
+  {jw:'budhe', id:'bibi (kakak dari ayah/ibu)', cat:'Keluarga'},
+  {jw:'paklik', id:'paman (adik dari ayah/ibu)', cat:'Keluarga'},
+  {jw:'bulik', id:'bibi (adik dari ayah/ibu)', cat:'Keluarga'},
+
+  // Makanan & Minuman
+  {jw:'sega / sego', id:'nasi', cat:'Makanan'},
+  {jw:'iwak', id:'lauk / ikan', cat:'Makanan'},
+  {jw:'sayur', id:'sayur', cat:'Makanan'},
+  {jw:'banyu', id:'air', cat:'Makanan'},
+  {jw:'kopi', id:'kopi', cat:'Makanan'},
+  {jw:'teh anget', id:'teh hangat', cat:'Makanan'},
+  {jw:'gula', id:'gula', cat:'Makanan'},
+  {jw:'uyah', id:'garam', cat:'Makanan'},
+  {jw:'pedhes', id:'pedas', cat:'Makanan'},
+  {jw:'legi', id:'manis', cat:'Makanan'},
+  {jw:'pait', id:'pahit', cat:'Makanan'},
+  {jw:'luwe', id:'lapar', cat:'Makanan'},
+  {jw:'ngelak', id:'haus', cat:'Makanan'},
+  {jw:'wareg', id:'kenyang', cat:'Makanan'},
+
+  // Aktivitas sehari-hari
+  {jw:'mangan', id:'makan', cat:'Aktivitas'},
+  {jw:'ngombe', id:'minum', cat:'Aktivitas'},
+  {jw:'turu', id:'tidur', cat:'Aktivitas'},
+  {jw:'tangi', id:'bangun', cat:'Aktivitas'},
+  {jw:'adus', id:'mandi', cat:'Aktivitas'},
+  {jw:'lunga', id:'pergi', cat:'Aktivitas'},
+  {jw:'mulih', id:'pulang', cat:'Aktivitas'},
+  {jw:'teka', id:'datang', cat:'Aktivitas'},
+  {jw:'mlaku', id:'jalan (berjalan kaki)', cat:'Aktivitas'},
+  {jw:'mlayu', id:'lari', cat:'Aktivitas'},
+  {jw:'lungguh', id:'duduk', cat:'Aktivitas'},
+  {jw:'ngadeg', id:'berdiri', cat:'Aktivitas'},
+  {jw:'sinau', id:'belajar', cat:'Aktivitas'},
+  {jw:'nyambut gawe', id:'bekerja', cat:'Aktivitas'},
+  {jw:'dolan', id:'main / jalan-jalan', cat:'Aktivitas'},
+  {jw:'ngobrol', id:'mengobrol', cat:'Aktivitas'},
+
+  // Perasaan
+  {jw:'seneng', id:'senang', cat:'Perasaan'},
+  {jw:'sedhih', id:'sedih', cat:'Perasaan'},
+  {jw:'nesu', id:'marah', cat:'Perasaan'},
+  {jw:'wedi', id:'takut', cat:'Perasaan'},
+  {jw:'kesel', id:'capek / lelah', cat:'Perasaan'},
+  {jw:'bingung', id:'bingung', cat:'Perasaan'},
+  {jw:'kangen', id:'rindu', cat:'Perasaan'},
+  {jw:'isin', id:'malu', cat:'Perasaan'},
+  {jw:'gumun', id:'kagum / heran', cat:'Perasaan'},
+
+  // Alam & Waktu
+  {jw:'srengenge', id:'matahari', cat:'Alam & Waktu'},
+  {jw:'rembulan', id:'bulan', cat:'Alam & Waktu'},
+  {jw:'lintang', id:'bintang', cat:'Alam & Waktu'},
+  {jw:'udan', id:'hujan', cat:'Alam & Waktu'},
+  {jw:'angin', id:'angin', cat:'Alam & Waktu'},
+  {jw:'gunung', id:'gunung', cat:'Alam & Waktu'},
+  {jw:'kali', id:'sungai', cat:'Alam & Waktu'},
+  {jw:'sawah', id:'sawah', cat:'Alam & Waktu'},
+  {jw:'wengi', id:'malam', cat:'Alam & Waktu'},
+  {jw:'awan', id:'siang', cat:'Alam & Waktu'},
+  {jw:'esuk', id:'pagi', cat:'Alam & Waktu'},
+  {jw:'saiki', id:'sekarang', cat:'Alam & Waktu'},
+  {jw:'mengko', id:'nanti', cat:'Alam & Waktu'},
+  {jw:'wingi', id:'kemarin', cat:'Alam & Waktu'},
+  {jw:'sesuk', id:'besok', cat:'Alam & Waktu'},
+
+  // Angka
+  {jw:'siji', id:'satu', cat:'Angka'},
+  {jw:'loro', id:'dua', cat:'Angka'},
+  {jw:'telu', id:'tiga', cat:'Angka'},
+  {jw:'papat', id:'empat', cat:'Angka'},
+  {jw:'lima', id:'lima', cat:'Angka'},
+  {jw:'enem', id:'enam', cat:'Angka'},
+  {jw:'pitu', id:'tujuh', cat:'Angka'},
+  {jw:'wolu', id:'delapan', cat:'Angka'},
+  {jw:'sanga', id:'sembilan', cat:'Angka'},
+  {jw:'sepuluh', id:'sepuluh', cat:'Angka'},
+];
+
+let kamusActiveCat = 'Semua';
+
+function renderKamusCategories(){
+  const cats = ['Semua', ...new Set(KAMUS_DATA.map(k=>k.cat))];
+  const el = document.getElementById('kamusCategories');
+  el.innerHTML = cats.map(c => `
+    <div class="kamus-cat-chip ${c===kamusActiveCat?'active':''}" onclick="setKamusCat('${c}')">${c}</div>
+  `).join('');
+}
+function setKamusCat(cat){
+  kamusActiveCat = cat;
+  renderKamusCategories();
+  renderKamusList();
+}
+
+function renderKamusList(){
+  renderKamusCategories();
+  const q = (document.getElementById('kamusSearch').value || '').toLowerCase().trim();
+  let items = KAMUS_DATA;
+  if(kamusActiveCat !== 'Semua'){
+    items = items.filter(k => k.cat === kamusActiveCat);
+  }
+  if(q){
+    items = items.filter(k => k.jw.toLowerCase().includes(q) || k.id.toLowerCase().includes(q));
+  }
+  const listEl = document.getElementById('kamusList');
+  if(items.length === 0){
+    listEl.innerHTML = `<div class="kamus-empty">${currentLang==='jw' ? 'Tembunge ora ketemu, kancaku.' : 'Kata tidak ditemukan, temanku.'}</div>`;
+    return;
+  }
+  listEl.innerHTML = items.map(k => `
+    <div class="kamus-item">
+      <div class="ki-jw">${k.jw}</div>
+      <div class="ki-id">${k.id}</div>
+      <div class="ki-cat">${k.cat}</div>
+    </div>
+  `).join('');
 }
 
 /* ============ PWA: SERVICE WORKER ============ */
