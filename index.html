@@ -288,6 +288,28 @@
   .kamus-item .ki-id{font-size:13.5px;color:var(--ink);margin-top:2px;}
   .kamus-item .ki-cat{font-size:10.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;margin-top:4px;}
   .kamus-empty{text-align:center;color:var(--ink-soft);font-size:13.5px;padding:40px 20px;}
+
+  /* ---------- SHARE MODAL ---------- */
+  .share-overlay{
+    position:absolute;inset:0;background:rgba(10,20,15,.6);display:none;
+    z-index:30;align-items:flex-end;justify-content:center;
+  }
+  .share-overlay.show{display:flex;}
+  .share-modal{
+    background:var(--white);width:100%;max-width:480px;border-radius:20px 20px 0 0;
+    padding:16px;display:flex;flex-direction:column;gap:14px;max-height:88vh;
+    animation:slideUp .25s ease;
+  }
+  @keyframes slideUp{from{transform:translateY(30px);opacity:0;} to{transform:translateY(0);opacity:1;}}
+  .share-modal-header{display:flex;align-items:center;justify-content:space-between;font-family:var(--font-display);font-weight:700;font-size:16px;color:var(--accent);}
+  .share-close-btn{border:none;background:var(--green-050);color:var(--ink-soft);width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;}
+  .share-preview-wrap{flex:1;overflow-y:auto;background:var(--bg);border-radius:14px;padding:10px;display:flex;justify-content:center;}
+  .share-preview-wrap canvas{width:100%;height:auto;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.15);}
+  .share-actions{display:flex;flex-direction:column;gap:8px;}
+  .share-download-btn{
+    width:100%;padding:13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+    background:none;color:var(--accent);font-weight:700;font-size:14.5px;cursor:pointer;font-family:var(--font-body);
+  }
 </style>
 </head>
 <body>
@@ -362,6 +384,9 @@
         <div class="header-title">PaiJO</div>
       </div>
       <div class="header-right">
+        <button class="icon-btn" title="Bagikan Obrolan" onclick="openShareChat()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/></svg>
+        </button>
         <button class="icon-btn" title="Pengaturan" onclick="showScreen('screen-settings')">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
         </button>
@@ -502,6 +527,23 @@
     </div>
   </div>
 
+  <!-- ===================== SHARE OBROLAN MODAL ===================== -->
+  <div class="share-overlay" id="shareOverlay" onclick="closeShareChat(event)">
+    <div class="share-modal" onclick="event.stopPropagation()">
+      <div class="share-modal-header">
+        <span data-i18n="share_title">Bagikan Obrolan</span>
+        <button class="share-close-btn" onclick="closeShareChat()">✕</button>
+      </div>
+      <div class="share-preview-wrap">
+        <canvas id="shareCanvas"></canvas>
+      </div>
+      <div class="share-actions">
+        <button class="btn-primary" id="shareBtnMain" onclick="doShareImage()" data-i18n="share_btn">Bagikan Gambar</button>
+        <button class="share-download-btn" onclick="doDownloadImage()" data-i18n="share_download">Unduh Gambar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===================== DRAWER + OVERLAY ===================== -->
   <div class="overlay" id="overlay" onclick="closeDrawer()"></div>
   <div class="drawer" id="drawer">
@@ -563,6 +605,7 @@ const I18N = {
     settings_lang_title:"Bahasa", settings_lang_desc:"Bahasa tampilan & jawaban PaiJO.",
     settings_theme_title:"Mode Tampilan", settings_theme_desc:"Pilih tampilan terang atau gelap yang nyaman untuk matamu.",
     settings_theme_light:"Terang", settings_theme_dark:"Gelap",
+    share_title:"Bagikan Obrolan", share_btn:"Bagikan Gambar", share_download:"Unduh Gambar",
     drawer_playlist:"🎵 Playlist Favorit", drawer_history:"💬 Riwayat Obrolan", logout:"Keluar",
     greeting:"Halo! Aku PaiJO, bolo dewe-mu. Ada yang bisa dibantu hari ini?",
     mock_reply:"Nggih, siap! (Ini masih respons simulasi — nanti setelah API Claude tersambung, PaiJO akan menjawab sungguhan ya.)",
@@ -584,6 +627,7 @@ const I18N = {
     settings_lang_title:"Basa", settings_lang_desc:"Basa tampilan & wangsulane PaiJO.",
     settings_theme_title:"Mode Tampilan", settings_theme_desc:"Pilih tampilan padhang utawa peteng sing kepenak kanggo matamu.",
     settings_theme_light:"Padhang", settings_theme_dark:"Peteng",
+    share_title:"Bagikan Obrolan", share_btn:"Bagikan Gambar", share_download:"Undhuh Gambar",
     drawer_playlist:"🎵 Playlist Favorit", drawer_history:"💬 Riwayat Obrolan", logout:"Metu",
     greeting:"Nggih, kancaku! Aku PaiJO, bolo dewe-mu. Ono sing iso tak bantu dino iki?",
     mock_reply:"Nggih, siap kancaku! (Iki isih respons simulasi — mengko yen API Claude wis kesambung, PaiJO bakal njawab tenanan.)",
@@ -1255,6 +1299,182 @@ function renderKamusList(){
       <div class="ki-cat">${k.cat}</div>
     </div>
   `).join('');
+}
+
+/* ============ BAGIKAN OBROLAN (SHARE AS IMAGE) ============ */
+function roundRectPath(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+async function drawShareCanvas(){
+  const canvas = document.getElementById('shareCanvas');
+  const ctx = canvas.getContext('2d');
+  if(document.fonts && document.fonts.ready){ try{ await document.fonts.ready; }catch(e){} }
+
+  const msgs = chatHistory.slice(-6);
+  const W = 720, PAD = 36, SCALE = 2;
+  const maxBubbleWidth = W - PAD*2 - 60;
+  const bubblePad = 14, lineHeight = 21, bubbleGap = 14, HEADER_H = 150, FOOTER_H = 90;
+
+  canvas.width = W*SCALE;
+  canvas.height = 800*SCALE;
+  ctx.scale(SCALE, SCALE);
+
+  function wrapText(text, maxWidth){
+    const words = text.split(' ');
+    let lines = [], current = '';
+    words.forEach(w=>{
+      const test = current ? current + ' ' + w : w;
+      if(ctx.measureText(test).width > maxWidth && current){
+        lines.push(current); current = w;
+      } else { current = test; }
+    });
+    if(current) lines.push(current);
+    return lines;
+  }
+
+  let cursorY = HEADER_H + 24;
+  const items = [];
+  msgs.forEach(m=>{
+    ctx.font = '500 15px Inter, sans-serif';
+    const lines = wrapText(m.text, maxBubbleWidth - bubblePad*2);
+    const bubbleH = lines.length*lineHeight + bubblePad*2 + 18;
+    items.push({ m, lines, bubbleH });
+    cursorY += bubbleH + bubbleGap;
+  });
+  const totalH = Math.max(cursorY + FOOTER_H, 260);
+
+  canvas.height = totalH*SCALE;
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.scale(SCALE, SCALE);
+
+  ctx.fillStyle = '#F6F8F6';
+  ctx.fillRect(0,0,W,totalH);
+
+  const grad = ctx.createLinearGradient(0,0,W,HEADER_H);
+  grad.addColorStop(0,'#0B4D2F');
+  grad.addColorStop(1,'#146B3F');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,0,W,HEADER_H);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '800 40px Poppins, sans-serif';
+  ctx.fillText('PaiJO', W/2, 66);
+  ctx.fillStyle = '#CDEBD9';
+  ctx.font = '600 24px Caveat, cursive';
+  ctx.fillText('Bolo Dewe', W/2, 97);
+  ctx.fillStyle = 'rgba(255,255,255,0.75)';
+  ctx.font = '500 12px Inter, sans-serif';
+  ctx.fillText('paijo-app.vercel.app', W/2, 122);
+
+  let y = HEADER_H + 24;
+  if(items.length === 0){
+    ctx.fillStyle = '#5C6B64';
+    ctx.font = '500 14px Inter, sans-serif';
+    ctx.fillText(
+      currentLang==='jw' ? 'Durung ana obrolan kanggo dibagekake.' : 'Belum ada obrolan untuk dibagikan.',
+      W/2, y+20
+    );
+  }
+
+  items.forEach(({m, lines, bubbleH})=>{
+    const isUser = m.role === 'user';
+    ctx.font = '600 11px Inter, sans-serif';
+    ctx.fillStyle = '#8A9A90';
+    ctx.textAlign = isUser ? 'right' : 'left';
+    ctx.fillText((m.lang==='jw' ? 'JAWA' : 'INDONESIA'), isUser ? W-PAD : PAD, y+12);
+
+    ctx.font = '500 15px Inter, sans-serif';
+    let maxLineW = 0;
+    lines.forEach(l => maxLineW = Math.max(maxLineW, ctx.measureText(l).width));
+    const bw = Math.min(maxBubbleWidth, maxLineW + bubblePad*2);
+    const bx = isUser ? W-PAD-bw : PAD;
+    const by = y + 18;
+    const bh = bubbleH - 18;
+
+    ctx.fillStyle = isUser ? '#EAF4EE' : '#FFFFFF';
+    roundRectPath(ctx, bx, by, bw, bh, 14);
+    ctx.fill();
+    if(!isUser){ ctx.strokeStyle = '#DCE6E0'; ctx.lineWidth = 1; ctx.stroke(); }
+
+    ctx.fillStyle = '#182420';
+    ctx.textAlign = 'left';
+    ctx.font = '500 15px Inter, sans-serif';
+    lines.forEach((line, i)=>{
+      ctx.fillText(line, bx+bubblePad, by+bubblePad+(i+1)*lineHeight-6);
+    });
+
+    y += bubbleH + bubbleGap;
+  });
+
+  ctx.strokeStyle = '#DCE6E0';
+  ctx.beginPath();
+  ctx.moveTo(PAD, y+10);
+  ctx.lineTo(W-PAD, y+10);
+  ctx.stroke();
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#5C6B64';
+  ctx.font = '500 13px Inter, sans-serif';
+  ctx.fillText(
+    currentLang==='jw' ? 'Ngobrol karo PaiJO, Bolo Dewe-mu' : 'Ngobrol bareng PaiJO, teman AI-mu',
+    W/2, y+38
+  );
+  ctx.fillStyle = '#0B4D2F';
+  ctx.font = '700 13px Inter, sans-serif';
+  ctx.fillText('powered by IdeA1', W/2, y+60);
+}
+
+async function openShareChat(){
+  if(chatHistory.length === 0){
+    alert(currentLang==='jw' ? 'Durung ana obrolan kanggo dibagekake, kancaku.' : 'Belum ada obrolan untuk dibagikan, temanku.');
+    return;
+  }
+  document.getElementById('shareOverlay').classList.add('show');
+  await drawShareCanvas();
+}
+function closeShareChat(e){
+  document.getElementById('shareOverlay').classList.remove('show');
+}
+function doDownloadImage(){
+  const canvas = document.getElementById('shareCanvas');
+  canvas.toBlob(blob=>{
+    if(!blob) return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'paijo-obrolan.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 2000);
+  }, 'image/png');
+}
+async function doShareImage(){
+  const canvas = document.getElementById('shareCanvas');
+  canvas.toBlob(async blob=>{
+    if(!blob) return;
+    const file = new File([blob], 'paijo-obrolan.png', { type:'image/png' });
+    if(navigator.canShare && navigator.canShare({ files:[file] })){
+      try{
+        await navigator.share({
+          files:[file],
+          title:'PaiJO - Bolo Dewe',
+          text: currentLang==='jw' ? 'Yuk ngobrol karo PaiJO, Bolo Dewe-mu!' : 'Yuk ngobrol bareng PaiJO, teman AI-mu!'
+        });
+      }catch(e){ /* dibatalkan user, ora popo */ }
+    } else {
+      doDownloadImage();
+      alert(currentLang==='jw' ? 'Gambar wis diundhuh. Fitur bagikan langsung durung didhukung ing perangkat iki.' : 'Gambar sudah diunduh. Fitur bagikan langsung belum didukung di perangkat ini.');
+    }
+  }, 'image/png');
 }
 
 /* ============ MODE TERANG / PETENG (DARK MODE) ============ */
