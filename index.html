@@ -310,6 +310,29 @@
     width:100%;padding:13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);
     background:none;color:var(--accent);font-weight:700;font-size:14.5px;cursor:pointer;font-family:var(--font-body);
   }
+
+  /* ---------- DONGENG JAWA ---------- */
+  #screen-dongeng{background:var(--bg);}
+  .dongeng-list{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px;}
+  .dongeng-card{background:var(--white);border-radius:var(--radius-md);padding:16px;border:1px solid var(--border);display:flex;gap:14px;align-items:flex-start;cursor:pointer;}
+  .dongeng-card .dc-emoji{font-size:32px;flex-shrink:0;width:48px;height:48px;background:var(--green-050);border-radius:12px;display:flex;align-items:center;justify-content:center;}
+  .dongeng-card .dc-title{font-family:var(--font-display);font-weight:700;font-size:15.5px;color:var(--accent);}
+  .dongeng-card .dc-teaser{font-size:12.5px;color:var(--ink-soft);margin-top:4px;line-height:1.5;}
+  .dongeng-detail{flex:1;overflow-y:auto;display:none;}
+  .dongeng-detail-body{padding:20px 18px 32px;}
+  .dongeng-detail-body .dd-emoji{font-size:44px;text-align:center;margin-bottom:8px;}
+  .dongeng-detail-body .dd-title{font-family:var(--font-display);font-weight:800;font-size:22px;color:var(--accent);text-align:center;}
+  .dongeng-detail-body .dd-listen{
+    display:flex;align-items:center;justify-content:center;gap:8px;margin:16px auto 20px;
+    width:fit-content;padding:9px 18px;border-radius:20px;background:var(--green-050);
+    color:var(--accent);font-weight:600;font-size:13px;cursor:pointer;border:none;font-family:var(--font-body);
+  }
+  .dongeng-detail-body .dd-text{font-size:14.5px;line-height:1.85;color:var(--ink);white-space:pre-line;}
+  .dongeng-detail-body .dd-moral{
+    margin-top:20px;background:var(--green-050);border-radius:var(--radius-sm);padding:14px 16px;
+    font-size:13px;color:var(--ink);line-height:1.6;font-style:italic;
+  }
+  .dongeng-detail-body .dd-moral b{font-style:normal;color:var(--accent);}
 </style>
 </head>
 <body>
@@ -482,6 +505,23 @@
     <div class="kamus-list" id="kamusList"></div>
   </div>
 
+  <!-- ===================== DONGENG JAWA ===================== -->
+  <div class="screen" id="screen-dongeng">
+    <div class="app-header">
+      <div class="header-left">
+        <button class="back-btn" id="dongengBackBtn" onclick="dongengBack()">‹</button>
+        <div class="header-title" id="dongengHeaderTitle" data-i18n="dongeng_title">Dongeng Jawa</div>
+      </div>
+      <div></div>
+    </div>
+
+    <div class="dongeng-list" id="dongengListView"></div>
+
+    <div class="dongeng-detail" id="dongengDetailView" style="display:none">
+      <div class="dongeng-detail-body" id="dongengDetailBody"></div>
+    </div>
+  </div>
+
   <div class="screen" id="screen-settings">
     <div class="app-header">
       <div class="header-left">
@@ -567,6 +607,9 @@
       <div id="historyList"></div>
     </div>
     <div class="drawer-footer">
+      <div class="drawer-item" onclick="showScreen('screen-dongeng');closeDrawer();renderDongengList();">
+        <span class="ic">📜</span><span class="txt"><span class="t1" data-i18n="dongeng_title">Dongeng Jawa</span></span>
+      </div>
       <div class="drawer-item" onclick="showScreen('screen-kamus');closeDrawer();renderKamusList();">
         <span class="ic">📖</span><span class="txt"><span class="t1" data-i18n="kamus_title">Kamus Jawa</span></span>
       </div>
@@ -606,6 +649,7 @@ const I18N = {
     settings_theme_title:"Mode Tampilan", settings_theme_desc:"Pilih tampilan terang atau gelap yang nyaman untuk matamu.",
     settings_theme_light:"Terang", settings_theme_dark:"Gelap",
     share_title:"Bagikan Obrolan", share_btn:"Bagikan Gambar", share_download:"Unduh Gambar",
+    dongeng_title:"Dongeng Jawa",
     drawer_playlist:"🎵 Playlist Favorit", drawer_history:"💬 Riwayat Obrolan", logout:"Keluar",
     greeting:"Halo! Aku PaiJO, bolo dewe-mu. Ada yang bisa dibantu hari ini?",
     mock_reply:"Nggih, siap! (Ini masih respons simulasi — nanti setelah API Claude tersambung, PaiJO akan menjawab sungguhan ya.)",
@@ -628,6 +672,7 @@ const I18N = {
     settings_theme_title:"Mode Tampilan", settings_theme_desc:"Pilih tampilan padhang utawa peteng sing kepenak kanggo matamu.",
     settings_theme_light:"Padhang", settings_theme_dark:"Peteng",
     share_title:"Bagikan Obrolan", share_btn:"Bagikan Gambar", share_download:"Undhuh Gambar",
+    dongeng_title:"Dongeng Jawa",
     drawer_playlist:"🎵 Playlist Favorit", drawer_history:"💬 Riwayat Obrolan", logout:"Metu",
     greeting:"Nggih, kancaku! Aku PaiJO, bolo dewe-mu. Ono sing iso tak bantu dino iki?",
     mock_reply:"Nggih, siap kancaku! (Iki isih respons simulasi — mengko yen API Claude wis kesambung, PaiJO bakal njawab tenanan.)",
@@ -1299,6 +1344,192 @@ function renderKamusList(){
       <div class="ki-cat">${k.cat}</div>
     </div>
   `).join('');
+}
+
+/* ============ DONGENG JAWA ============ */
+const DONGENG_DATA = [
+  {
+    id: 'roro-jonggrang', emoji: '🏯',
+    title_id: 'Roro Jonggrang', title_jw: 'Rara Jonggrang',
+    teaser_id: 'Asal-usul Candi Prambanan dan candi ke-1000 yang tak pernah selesai.',
+    teaser_jw: 'Asal-usule Candi Prambanan lan candi kaping sewu sing ora tau rampung.',
+    story_id: `Di tanah Prambanan, hiduplah seorang putri cantik bernama Roro Jonggrang, anak Prabu Baka. Suatu hari, kerajaan ayahnya ditaklukkan oleh Bandung Bondowoso, seorang pangeran sakti yang jatuh cinta pada kecantikan Roro Jonggrang dan ingin menikahinya.
+
+Roro Jonggrang tidak menyukai Bandung Bondowoso karena dialah yang membunuh ayahnya. Namun ia takut menolak secara langsung karena kesaktian sang pangeran. Maka ia mengajukan syarat yang mustahil: Bandung Bondowoso harus membangun seribu candi dalam semalam.
+
+Dengan bantuan para jin, Bandung Bondowoso hampir menyelesaikan tugas itu. Panik karena syarat itu hampir terpenuhi, Roro Jonggrang meminta para dayang membakar jerami dan menumbuk padi supaya ayam berkokok, seolah pagi sudah tiba. Para jin pun kabur karena mengira waktu mereka habis, dan pembangunan berhenti di candi ke-999.
+
+Mengetahui dirinya ditipu, Bandung Bondowoso murka. Ia mengutuk Roro Jonggrang menjadi arca batu, untuk melengkapi candi yang ke-1000. Konon, arca itulah yang kini dikenal sebagai Candi Roro Jonggrang di kompleks Candi Prambanan.`,
+    story_jw: `Ing tanah Prambanan, ana putri ayu jenenge Rara Jonggrang, anake Prabu Baka. Kratone bapake dijajah dening Bandung Bondowoso, pangeran sekti sing tresna marang Rara Jonggrang lan pengin ngepek dadi bojo.
+
+Rara Jonggrang ora seneng, amarga Bandung Bondowoso mateni bapake. Nanging wedi nolak langsung, dheweke njaluk syarat abot: kudu digawekake candi sewu sewengi.
+
+Kanthi bantuan jin, candi meh rampung. Rara Jonggrang banjur akal-akalan: ngobong jerami lan nutu pari ben pitik kluruk, kaya-kaya wis esuk. Jin-jin mlayu, candi mung rampung 999.
+
+Bandung Bondowoso ngerti yen diapusi, banjur nesu lan nyupatani Rara Jonggrang dadi reca, kanggo njangkepi candi kaping sewu. Reca kuwi saiki dikenal Candi Rara Jonggrang ing Prambanan.`,
+    moral_id: 'Kejujuran itu penting — kebohongan, meski demi menyelamatkan diri, bisa berakibat panjang.',
+    moral_jw: 'Aja seneng ngapusi, senajan kanggo nylametake awake dhewe.'
+  },
+  {
+    id: 'timun-mas', emoji: '🥒',
+    title_id: 'Timun Mas', title_jw: 'Timun Emas',
+    teaser_id: 'Gadis lahir dari biji timun yang mengalahkan raksasa Buto Ijo dengan kecerdikan.',
+    teaser_jw: 'Bocah wadon saka wiji timun sing ngalahake buto ijo kanthi cerdik.',
+    story_id: `Alkisah, ada seorang janda bernama Mbok Rondo yang sangat merindukan seorang anak. Ia pun berdoa kepada raksasa Buto Ijo, yang memberinya sebutir biji timun dengan syarat: kelak jika anak itu sudah besar, ia harus diserahkan pada Buto Ijo untuk disantap.
+
+Biji itu tumbuh menjadi timun besar berwarna emas, dan di dalamnya ada bayi perempuan mungil. Mbok Rondo menamainya Timun Mas dan membesarkannya dengan penuh kasih sayang.
+
+Bertahun-tahun kemudian, Buto Ijo datang menagih janji. Ketakutan, Mbok Rondo memberi Timun Mas empat bungkusan ajaib berisi biji timun, jarum, garam, dan terasi, lalu menyuruhnya lari.
+
+Buto Ijo mengejar. Setiap kali hampir tertangkap, Timun Mas melempar satu bungkusan: biji timun jadi hutan lebat, jarum jadi hutan bambu berduri, garam jadi lautan luas, dan terasi jadi lautan lumpur mendidih yang akhirnya menenggelamkan Buto Ijo.
+
+Timun Mas pun selamat dan hidup bahagia bersama Mbok Rondo.`,
+    story_jw: `Biyen, ana randha jenenge Mbok Rondo sing kepengin banget duwe anak. Dheweke nyuwun marang buto ijo, sing menehi wiji timun kanthi syarat: yen anake wis gedhe, kudu diulungake marang buto ijo kanggo dipangan.
+
+Wiji mau thukul dadi timun gedhe emas, isine bayi wadon. Diwenehi jeneng Timun Emas, digulawenthah kanthi tresna dening Mbok Rondo.
+
+Pirang-pirang taun candhake, buto ijo teka nagih janji. Mbok Rondo wedi, banjur menehi Timun Emas papat bungkusan sekti: wiji timun, dom, uyah, lan terasi, banjur dikongkon mlayu.
+
+Buto ijo ngoyak. Saben meh kejawil, Timun Emas mbuwang siji bungkusan: wiji timun dadi alas, dom dadi alas pring eri, uyah dadi segara, lan terasi dadi segara lendhut panas sing ngelemake buto ijo.
+
+Timun Emas slamet lan urip bagya bareng Mbok Rondo.`,
+    moral_id: 'Kecerdikan dan keberanian bisa mengalahkan kekuatan yang jauh lebih besar.',
+    moral_jw: 'Cerdik lan wani bisa ngalahake kekuatan sing luwih gedhe.'
+  },
+  {
+    id: 'joko-tarub', emoji: '👘',
+    title_id: 'Joko Tarub', title_jw: 'Jaka Tarub',
+    teaser_id: 'Kisah pemuda yang menyembunyikan selendang bidadari dan pelajaran soal menepati janji.',
+    teaser_jw: 'Critane jaka sing ndhelikake selendang widadari lan pitutur bab netepi janji.',
+    story_id: `Joko Tarub adalah seorang pemuda desa yang gemar berburu. Suatu hari, saat berjalan di dekat telaga, ia melihat tujuh bidadari sedang mandi sambil melepas selendang mereka di tepian. Karena penasaran, ia mengambil salah satu selendang milik bidadari bernama Nawang Wulan dan menyembunyikannya.
+
+Ketika selesai mandi, keenam bidadari lain terbang kembali ke kahyangan, namun Nawang Wulan tak bisa terbang tanpa selendangnya. Ia pun tertinggal di bumi. Joko Tarub kemudian menemuinya dan menawarkan bantuan, hingga akhirnya mereka menikah dan dikaruniai seorang anak bernama Nawangsih.
+
+Nawang Wulan punya kesaktian menanak nasi dari sebutir beras saja, dengan syarat Joko Tarub tidak boleh membuka tutup dandang saat ia memasak. Namun rasa penasaran membuat Joko Tarub melanggar janji itu, dan sejak saat itu kesaktian Nawang Wulan hilang — ia harus menanak nasi seperti manusia biasa, sehingga lumbung padi mereka cepat habis.
+
+Suatu hari, Nawang Wulan menemukan selendangnya yang disembunyikan Joko Tarub. Ia pun tahu kebenarannya, dan dengan berat hati kembali terbang ke kahyangan, meninggalkan Joko Tarub dan anaknya di bumi.`,
+    story_jw: `Jaka Tarub iku nom-noman seneng mburu. Sawijining dina, ing sacedhake tlaga, weruh pitu widadari lagi adus karo nyopot selendange. Amarga penasaran, Jaka Tarub njupuk selendang duweke widadari jenenge Nawang Wulan, banjur didhelikake.
+
+Rampung adus, widadari liyane mabur bali menyang kahyangan, nanging Nawang Wulan ora bisa mabur amarga selendange ilang. Dheweke kari ing bumi. Jaka Tarub nulungi, banjur nikah lan duwe anak jenenge Nawangsih.
+
+Nawang Wulan duwe kesekten olah sega mung saka sak-uceng beras, kanthi syarat Jaka Tarub ora oleh mbukak tutup dandang nalika masak. Nanging Jaka Tarub penasaran, banjur mbukak, lan wiwit iku kesektene ilang — kudu masak kaya manungsa biasa, lumbung pari cepet entek.
+
+Sawijining dina, Nawang Wulan nemokake selendange sing didhelikake. Dheweke ngerti bab sing sabenere, banjur mabur bali menyang kahyangan, ninggalake Jaka Tarub lan anake ing bumi.`,
+    moral_id: 'Kejujuran dan menepati janji adalah pondasi kepercayaan dalam hubungan.',
+    moral_jw: 'Jujur lan netepi janji iku dhasar kapercayan ing sesambungan.'
+  },
+  {
+    id: 'keong-mas', emoji: '🐚',
+    title_id: 'Keong Mas', title_jw: 'Keong Mas',
+    teaser_id: 'Putri yang dikutuk jadi keong emas, diselamatkan oleh cinta tulus dan kesabaran.',
+    teaser_jw: 'Putri sing disupatani dadi keong emas, dislametake katresnan tulus lan sabar.',
+    story_id: `Dahulu kala, di Kerajaan Kediri, hiduplah seorang putri cantik bernama Candra Kirana yang bertunangan dengan Raden Panji Asmarabangun. Kecantikan dan kebahagiaannya membuat iri seorang selir bernama Dewi Galuh, yang kemudian meminta bantuan nenek sihir untuk mengutuk Candra Kirana.
+
+Sang putri pun berubah wujud menjadi seekor keong emas dan dibuang ke sungai. Untungnya, keong emas itu ditemukan oleh seorang nenek nelayan yang membawanya pulang. Setiap malam, keong emas itu diam-diam berubah kembali menjadi putri jelita dan memasak makanan lezat untuk sang nenek, lalu berubah lagi menjadi keong sebelum fajar.
+
+Suatu malam, sang nenek memergokinya. Karena rahasianya terbongkar, kutukan itu pun perlahan mulai pudar. Di sisi lain, Raden Panji yang sangat merindukan tunangannya berkelana mencarinya ke berbagai penjuru negeri.
+
+Setelah melalui banyak rintangan, Raden Panji akhirnya menemukan Candra Kirana di rumah sang nenek nelayan, dan kutukan itu pun benar-benar terangkat berkat cinta tulus mereka. Keduanya kembali ke istana dan hidup bahagia.`,
+    story_jw: `Biyen, ing Kraton Kediri, ana putri ayu jenenge Candra Kirana sing tunangan karo Raden Panji Asmarabangun. Ayu lan bagyane gawe meri selir jenenge Dewi Galuh, sing njaluk tulung nenek sihir kanggo nyupatani Candra Kirana.
+
+Sang putri banjur malih dadi keong emas, dibuwang ing kali. Untunge, keong emas mau ditemokake nenek tukang golek iwak, digawa mulih. Saben bengi, keong emas kuwi diam-diam malih maneh dadi putri ayu, masak panganan enak kanggo si nenek, banjur malih maneh dadi keong sadurunge esuk.
+
+Sawijining bengi, si nenek weruh. Wadi sing kabuka, supata mau alon-alon ilang. Ing pihak liya, Raden Panji sing kangen banget karo tunangane lelana golek menyang ngendi-endi.
+
+Sawise akeh rubeda, Raden Panji pungkasane nemokake Candra Kirana ing omahe nenek mau, lan supata bener-bener ilang amarga katresnan tulus. Sakloron banjur bali menyang kraton lan urip bagya.`,
+    moral_id: 'Cinta tulus dan kesabaran bisa mengalahkan tipu daya dan iri hati.',
+    moral_jw: 'Katresnan tulus lan sabar bisa ngalahake apus-apus lan meri.'
+  },
+  {
+    id: 'rawa-pening', emoji: '🐉',
+    title_id: 'Asal-usul Rawa Pening', title_jw: 'Asal-usule Rawa Pening',
+    teaser_id: 'Naga kecil, keserakahan warga desa, dan lahirnya sebuah danau di Jawa Tengah.',
+    teaser_jw: 'Naga cilik, srakahe warga desa, lan lairing tlaga ing Jawa Tengah.',
+    story_id: `Konon, ada seekor naga kecil bernama Baru Klinthing yang merupakan jelmaan seorang anak sakti. Ia ingin bertemu ayahnya di sebuah gunung, namun karena wujudnya seekor naga, ia sering diusir warga desa.
+
+Untuk membuktikan jati dirinya, Baru Klinthing menancapkan sebatang lidi di tanah dan berhasil mencabutnya kembali — tanda bahwa ia benar-benar putra sang resi. Namun alih-alih dipercaya, warga desa yang sedang mengadakan pesta justru menangkap dan berniat memasaknya untuk santapan.
+
+Baru Klinthing pun menyamar menjadi seorang anak kudisan dan meminta makanan ke rumah-rumah warga. Hampir semua warga mengusirnya dengan kasar, kecuali seorang nenek tua bernama Nyi Latung yang dengan tulus memberinya makan.
+
+Baru Klinthing lalu memperingatkan Nyi Latung agar segera mengungsi ke tempat tinggi, karena desa itu akan tenggelam. Ia menancapkan kembali lidinya di tengah desa sebagai tantangan — siapa yang bisa mencabutnya, akan mendapat kekayaan. Warga yang serakah berebut mencabut lidi itu, dan seketika air menyembur deras dari lubang tersebut hingga menenggelamkan seluruh desa, membentuk danau yang kini dikenal sebagai Rawa Pening. Hanya Nyi Latung yang selamat.`,
+    story_jw: `Konon, ana naga cilik jenenge Baru Klinthing, jelmaan bocah sekti. Dheweke pengin ketemu bapake ing gunung, nanging amarga wujude naga, asring diusir warga desa.
+
+Kanggo mbuktekake jatidhirine, Baru Klinthing nancepake lidi ing lemah lan bisa nyabut maneh — tandha yen dheweke pancen putrane sang resi. Nanging malah ora dipercaya, warga desa sing lagi pesta ndadak nyekel lan arep masak dheweke.
+
+Baru Klinthing banjur nyamar dadi bocah kudisen, njaluk pangan menyang omah-omah warga. Meh kabeh warga ngusir kanthi kasar, kejaba nenek tuwa jenenge Nyi Latung sing kanthi tulus menehi pangan.
+
+Baru Klinthing banjur ngelingake Nyi Latung ben ngungsi menyang panggonan dhuwur, amarga desa bakal kelem. Dheweke nancepake maneh lidine ing tengah desa minangka tantangan — sapa sing bisa nyabut, bakal sugih. Warga sing srakah rebutan nyabut lidi kuwi, banjur banyu muncrat deres saka bolongan kuwi nganti ngelemake kabeh desa, dadi tlaga sing saiki dikenal Rawa Pening. Mung Nyi Latung sing slamet.`,
+    moral_id: 'Keramahan dan ketulusan akan membawa berkah, sementara keserakahan membawa petaka.',
+    moral_jw: 'Grapyak lan tulus bakal nekakake berkah, dene srakah nekakake bebendu.'
+  }
+];
+
+function renderDongengList(){
+  document.getElementById('dongengListView').style.display = 'flex';
+  document.getElementById('dongengDetailView').style.display = 'none';
+  document.getElementById('dongengBackBtn').onclick = () => showScreen('screen-chat');
+  document.getElementById('dongengHeaderTitle').textContent = I18N[currentLang].dongeng_title;
+
+  const listEl = document.getElementById('dongengListView');
+  listEl.innerHTML = DONGENG_DATA.map(d => `
+    <div class="dongeng-card" onclick="openDongeng('${d.id}')">
+      <div class="dc-emoji">${d.emoji}</div>
+      <div>
+        <div class="dc-title">${currentLang==='jw' ? d.title_jw : d.title_id}</div>
+        <div class="dc-teaser">${currentLang==='jw' ? d.teaser_jw : d.teaser_id}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openDongeng(storyId){
+  const d = DONGENG_DATA.find(x => x.id === storyId);
+  if(!d) return;
+  document.getElementById('dongengListView').style.display = 'none';
+  document.getElementById('dongengDetailView').style.display = 'block';
+  document.getElementById('dongengBackBtn').onclick = () => renderDongengList();
+  document.getElementById('dongengHeaderTitle').textContent = currentLang==='jw' ? d.title_jw : d.title_id;
+
+  const title = currentLang==='jw' ? d.title_jw : d.title_id;
+  const story = currentLang==='jw' ? d.story_jw : d.story_id;
+  const moral = currentLang==='jw' ? d.moral_jw : d.moral_id;
+  const moralLabel = currentLang==='jw' ? 'Pitutur' : 'Pesan moral';
+  const listenLabel = currentLang==='jw' ? '🔊 Rungokake Crita' : '🔊 Dengarkan Cerita';
+
+  document.getElementById('dongengDetailBody').innerHTML = `
+    <div class="dd-emoji">${d.emoji}</div>
+    <div class="dd-title">${title}</div>
+    <button class="dd-listen" id="dongengListenBtn" onclick="toggleDongengSpeech('${d.id}')">${listenLabel}</button>
+    <div class="dd-text">${story}</div>
+    <div class="dd-moral"><b>${moralLabel}:</b> ${moral}</div>
+  `;
+}
+
+function dongengBack(){
+  showScreen('screen-chat');
+}
+
+let dongengUtterance = null;
+function toggleDongengSpeech(storyId){
+  if(!('speechSynthesis' in window)){
+    alert(currentLang==='jw' ? 'Piranti iki ora ndhukung fitur rungokake crita.' : 'Perangkat ini tidak mendukung fitur dengarkan cerita.');
+    return;
+  }
+  const btn = document.getElementById('dongengListenBtn');
+  if(speechSynthesis.speaking){
+    speechSynthesis.cancel();
+    if(btn) btn.textContent = currentLang==='jw' ? '🔊 Rungokake Crita' : '🔊 Dengarkan Cerita';
+    return;
+  }
+  const d = DONGENG_DATA.find(x => x.id === storyId);
+  if(!d) return;
+  const text = (currentLang==='jw' ? d.story_jw : d.story_id).replace(/\n+/g,' ');
+  dongengUtterance = new SpeechSynthesisUtterance(text);
+  dongengUtterance.lang = 'id-ID';
+  dongengUtterance.rate = 0.95;
+  dongengUtterance.onend = () => { if(btn) btn.textContent = currentLang==='jw' ? '🔊 Rungokake Crita' : '🔊 Dengarkan Cerita'; };
+  speechSynthesis.speak(dongengUtterance);
+  if(btn) btn.textContent = currentLang==='jw' ? '⏹️ Mandheg' : '⏹️ Berhenti';
 }
 
 /* ============ BAGIKAN OBROLAN (SHARE AS IMAGE) ============ */
