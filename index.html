@@ -232,6 +232,7 @@
   .drawer-item .del-btn:hover{color:var(--danger);}
   .drawer-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;}
   .drawer-item:hover{background:var(--green-050);}
+  .drawer-item.active-convo{background:var(--green-050);}
   .drawer-item .ic{font-size:16px;width:22px;text-align:center;}
   .drawer-item .txt{flex:1;min-width:0;}
   .drawer-item .txt .t1{font-size:13.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -412,6 +413,9 @@
         <div class="header-title">PaiJO</div>
       </div>
       <div class="header-right">
+        <button class="icon-btn" title="Obrolan Baru" onclick="startNewChat()">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
         <button class="icon-btn" title="Bagikan Obrolan" onclick="openShareChat()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/></svg>
         </button>
@@ -809,14 +813,15 @@ async function loadUserDataAndEnterChat(){
   document.getElementById('settingsLangSwitch').classList.toggle('on', currentLang==='jw');
   applyI18n();
 
-  // ambil / bikin 1 percakapan aktif untuk user ini
+  // ambil daftar percakapan user, pilih yang paling baru sebagai percakapan aktif
   try{
     let { data: convos, error } = await sb.from('conversations')
       .select('*').eq('user_id', currentUser.id)
-      .order('updated_at', { ascending:false }).limit(1);
+      .order('updated_at', { ascending:false }).limit(30);
     if(error) throw error;
 
     if(convos && convos.length > 0){
+      conversationsList = convos;
       currentConversationId = convos[0].id;
     } else {
       const { data: newConvo, error: insertErr } = await sb.from('conversations')
@@ -824,6 +829,7 @@ async function loadUserDataAndEnterChat(){
         .select().single();
       if(insertErr) throw insertErr;
       currentConversationId = newConvo.id;
+      conversationsList = [newConvo];
     }
   }catch(e){ errors.push('conversations: '+e.message); console.error('conversations error', e); }
 
@@ -867,7 +873,7 @@ async function doLogout(){
   currentConversationId = null;
   chatHistory = [];
   favEntries = [];
-  historyEntries = [];
+  conversationsList = [];
   showScreen('screen-login');
 }
 
@@ -907,7 +913,9 @@ function closeDrawer(){
 function filterDrawer(){
   const q = document.getElementById('drawerSearch').value.toLowerCase();
   document.querySelectorAll('#historyList .drawer-item, #favList .drawer-item').forEach(item=>{
-    const txt = item.querySelector('.t1').textContent.toLowerCase();
+    const t1 = item.querySelector('.t1');
+    if(!t1){ item.style.display = 'flex'; return; }
+    const txt = t1.textContent.toLowerCase();
     item.style.display = txt.includes(q) ? 'flex' : 'none';
   });
 }
@@ -1014,9 +1022,18 @@ function extractMusicQuery(text){
   return q;
 }
 
-function saveHistoryEntry(text){
-  const shortText = text.length > 40 ? text.slice(0,40)+'…' : text;
-  historyEntries.unshift({title: shortText, time: 'Baru saja'});
+async function saveHistoryEntry(text){
+  const convo = conversationsList.find(c => c.id === currentConversationId);
+  if(!convo) return;
+  const isFirstUserMsg = chatHistory.filter(m=>m.role==='user').length <= 1;
+  const nowIso = new Date().toISOString();
+  convo.updated_at = nowIso;
+  if(isFirstUserMsg){
+    convo.title = text.length > 40 ? text.slice(0,40)+'…' : text;
+    try{ await sb.from('conversations').update({ title: convo.title }).eq('id', currentConversationId); }
+    catch(e){ console.log('Gagal update judul obrolan:', e); }
+  }
+  conversationsList.sort((a,b)=> new Date(b.updated_at) - new Date(a.updated_at));
   renderHistory();
 }
 
@@ -1039,7 +1056,7 @@ let currentPlaylist = [];
 let trackIndex = 0;
 let isPlaying = true;
 let favEntries = [];
-let historyEntries = [];
+let conversationsList = []; // {id, title, updated_at}
 let ytPlayer = null;
 let ytReady = false;
 let pendingVideoId = null;
@@ -1198,32 +1215,101 @@ async function clearAllFav(){
     catch(e){ console.error('Gagal menghapus semua favorit:', e); }
   }
 }
+function formatRelTime(iso){
+  if(!iso) return '';
+  const diff = Date.now() - new Date(iso).getTime();
+  const min = Math.floor(diff/60000);
+  if(min < 1) return currentLang==='jw' ? 'Lagi wae' : 'Baru saja';
+  if(min < 60) return min + (currentLang==='jw' ? ' menit kepungkur' : ' menit lalu');
+  const hr = Math.floor(min/60);
+  if(hr < 24) return hr + (currentLang==='jw' ? ' jam kepungkur' : ' jam lalu');
+  const day = Math.floor(hr/24);
+  return day + (currentLang==='jw' ? ' dina kepungkur' : ' hari lalu');
+}
 function renderHistory(){
   const el = document.getElementById('historyList');
   const clearBtn = document.getElementById('historyClearBtn');
-  if(historyEntries.length===0){
+  if(conversationsList.length===0){
     el.innerHTML = '<div class="drawer-item"><span class="txt"><span class="t2">Belum ada obrolan</span></span></div>';
     if(clearBtn) clearBtn.style.display = 'none';
     return;
   }
   if(clearBtn) clearBtn.style.display = 'inline';
-  el.innerHTML = historyEntries.map((h,i)=>`
-    <div class="drawer-item">
+  el.innerHTML = conversationsList.map((c,i)=>`
+    <div class="drawer-item${c.id===currentConversationId ? ' active-convo' : ''}" onclick="switchConversation('${c.id}');">
       <span class="ic">💬</span>
-      <span class="txt"><span class="t1">${escapeHtml(h.title)}</span><span class="t2">${escapeHtml(h.time)}</span></span>
+      <span class="txt"><span class="t1">${escapeHtml(c.title || (currentLang==='jw' ? 'Obrolan anyar' : 'Obrolan baru'))}</span><span class="t2">${escapeHtml(formatRelTime(c.updated_at))}</span></span>
       <button class="del-btn" onclick="event.stopPropagation();deleteHistoryEntry(${i});">✕</button>
     </div>`).join('');
 }
-function deleteHistoryEntry(index){
-  historyEntries.splice(index,1);
+async function switchConversation(id){
+  if(id === currentConversationId){ closeDrawer(); return; }
+  currentConversationId = id;
+  try{
+    const { data: msgs, error } = await sb.from('messages')
+      .select('*').eq('conversation_id', id)
+      .order('created_at', { ascending:true });
+    if(error) throw error;
+    chatHistory = (msgs || []).map(m => ({ role:m.role, text:m.content, lang:m.lang }));
+  }catch(e){
+    console.error('Gagal memuat obrolan:', e);
+    chatHistory = [];
+  }
+  renderChat();
   renderHistory();
+  closeDrawer();
 }
-function clearAllHistory(){
-  if(historyEntries.length===0) return;
+async function startNewChat(){
+  if(!currentUser) return;
+  try{
+    const { data: newConvo, error } = await sb.from('conversations')
+      .insert({ user_id: currentUser.id, title: currentLang==='jw' ? 'Obrolan anyar' : 'Obrolan baru' })
+      .select().single();
+    if(error) throw error;
+    conversationsList.unshift(newConvo);
+    currentConversationId = newConvo.id;
+  }catch(e){
+    console.error('Gagal bikin obrolan baru:', e);
+    alert(currentLang==='jw' ? 'Gagal bikin obrolan anyar, coba maneh ya.' : 'Gagal membuat obrolan baru, coba lagi ya.');
+    return;
+  }
+  chatHistory = [];
+  renderChat();
+  await addBotMessage(I18N[currentLang].greeting);
+  renderHistory();
+  closeDrawer();
+}
+async function deleteHistoryEntry(index){
+  const convo = conversationsList[index];
+  if(!convo) return;
+  conversationsList.splice(index,1);
+  renderHistory();
+  try{
+    await sb.from('messages').delete().eq('conversation_id', convo.id);
+    await sb.from('conversations').delete().eq('id', convo.id);
+  }catch(e){ console.error('Gagal menghapus obrolan:', e); }
+  if(convo.id === currentConversationId){
+    if(conversationsList.length > 0){
+      await switchConversation(conversationsList[0].id);
+    } else {
+      await startNewChat();
+    }
+  }
+}
+async function clearAllHistory(){
+  if(conversationsList.length===0) return;
   const ok = confirm(currentLang==='jw' ? 'Busak kabeh riwayat obrolan?' : 'Hapus semua riwayat obrolan?');
   if(!ok) return;
-  historyEntries = [];
+  const ids = conversationsList.map(c=>c.id);
+  conversationsList = [];
   renderHistory();
+  try{
+    if(ids.length>0){
+      await sb.from('messages').delete().in('conversation_id', ids);
+      await sb.from('conversations').delete().in('id', ids);
+    }
+  }catch(e){ console.error('Gagal menghapus semua obrolan:', e); }
+  await startNewChat();
 }
 
 /* ============ SETTINGS: FONT SIZE ============ */
