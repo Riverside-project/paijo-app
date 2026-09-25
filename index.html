@@ -434,6 +434,8 @@
       </div>
     </div>
 
+    <div id="ytPlayerContainer" style="position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;"></div>
+
     <div class="input-bar">
       <div class="attach-popup" id="attachPopup">
         <button class="attach-opt" onclick="mockAttach('Kamera')"><span class="ic">📷</span>Kamera</button>
@@ -628,6 +630,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://www.youtube.com/iframe_api"></script>
 <script>
 const SUPABASE_URL = 'https://onlyaswqnttkrqzsuxvs.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ubHlhc3dxbnR0a3JxenN1eHZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3OTU5NDcsImV4cCI6MjEwMDM3MTk0N30.MMVSQ8He8_sT4H6vHgFBy4vDdHlH4S9fqCEEnZwEyfg';
@@ -972,7 +975,7 @@ async function sendMessage(){
     await addBotMessage(reply);
 
     if(isMusicRequest){
-      playMockTrack();
+      searchAndPlay(extractMusicQuery(text));
     }
   }catch(e){
     console.error('Gagal memanggil chat function:', e);
@@ -983,8 +986,19 @@ async function sendMessage(){
         ? 'Ngapunten kancaku, lagi ana gangguan nyambung menyang server. Coba maneh sedhela ya.'
         : 'Maaf temanku, lagi ada gangguan koneksi ke server. Coba lagi sebentar ya.'
     );
-    if(isMusicRequest) playMockTrack();
+    if(isMusicRequest) searchAndPlay(extractMusicQuery(text));
   }
+}
+
+function extractMusicQuery(text){
+  let q = text.toLowerCase();
+  const stopWords = ['tolong','coba','dong','yuk','ayo','mbok','please','setelke','setelkan','setel','puterin','putarkan','putarin','putar','muter','carikan','carikanlah','carikan','carikke','goleke','nggoleke','lagu','musik','jawa','the','song','music'];
+  stopWords.forEach(w => { q = q.replace(new RegExp('\\b'+w+'\\b','g'), ' '); });
+  q = q.replace(/\s+/g,' ').trim();
+  if(q.length < 2){
+    q = currentLang==='jw' ? 'lagu jawa populer' : 'lagu jawa populer';
+  }
+  return q;
 }
 
 function saveHistoryEntry(text){
@@ -1007,43 +1021,103 @@ function mockVoice(){
   addBotMessage(currentLang==='jw'?'Fitur rekam swara isih durung kesambung — mengko dientukke pas backend wis siap.':'Fitur rekam suara belum tersambung — nanti diaktifkan setelah backend siap.');
 }
 
-/* ============ MUSIC PLAYER (mock) ============ */
-const mockTracks = [
-  {title:'"Tembang Kangen" - Denny Caknan', emoji:'🎧'},
-  {title:'"Kartonyono Medot Janji" - Denny Caknan', emoji:'🎧'},
-  {title:'"Los Dol" - Denny Caknan', emoji:'🎧'},
-];
+/* ============ MUSIC PLAYER (YouTube) ============ */
+let currentPlaylist = [];
 let trackIndex = 0;
 let isPlaying = true;
 let favEntries = [];
 let historyEntries = [];
+let ytPlayer = null;
+let ytReady = false;
+let pendingVideoId = null;
 
-function playMockTrack(){
+function onYouTubeIframeAPIReady(){
+  ytPlayer = new YT.Player('ytPlayerContainer', {
+    height: '0',
+    width: '0',
+    playerVars: { playsinline: 1 },
+    events: {
+      onReady: function(){
+        ytReady = true;
+        if(pendingVideoId){
+          ytPlayer.loadVideoById(pendingVideoId);
+          pendingVideoId = null;
+        }
+      }
+    }
+  });
+}
+
+async function searchAndPlay(query){
   document.getElementById('musicPlayer').classList.add('show');
-  document.getElementById('musicTitle').textContent = mockTracks[trackIndex].title;
+  document.getElementById('musicCover').style.backgroundImage = 'none';
+  document.getElementById('musicCover').textContent = '🎵';
+  document.getElementById('musicTitle').textContent = currentLang==='jw' ? 'Nggoleki lagu...' : 'Mencari lagu...';
+  try{
+    const { data, error } = await sb.functions.invoke('youtube', { body: { query } });
+    if(error || !data || !data.results || data.results.length===0) throw new Error('Ora nemu lagu');
+    currentPlaylist = data.results;
+    trackIndex = 0;
+    playCurrentTrack();
+  }catch(e){
+    console.error('Gagal nggoleki lagu:', e);
+    document.getElementById('musicTitle').textContent = currentLang==='jw' ? 'Ora nemu lagune, jajal maneh ya' : 'Lagu tidak ditemukan, coba lagi ya';
+  }
+}
+
+function playCurrentTrack(){
+  const track = currentPlaylist[trackIndex];
+  if(!track) return;
+  document.getElementById('musicTitle').textContent = track.title;
+  const cover = document.getElementById('musicCover');
+  if(track.thumbnail){
+    cover.style.backgroundImage = `url('${track.thumbnail}')`;
+    cover.textContent = '';
+  } else {
+    cover.style.backgroundImage = 'none';
+    cover.textContent = '🎵';
+  }
   isPlaying = true;
   updatePlayBtn();
   syncFavIcon();
+  if(ytReady && ytPlayer && ytPlayer.loadVideoById){
+    ytPlayer.loadVideoById(track.videoId);
+  } else {
+    pendingVideoId = track.videoId;
+  }
 }
 function togglePlay(){
   isPlaying = !isPlaying;
   updatePlayBtn();
+  if(ytPlayer && ytReady){
+    if(isPlaying) ytPlayer.playVideo(); else ytPlayer.pauseVideo();
+  }
 }
 function updatePlayBtn(){
   document.getElementById('playBtn').innerHTML = isPlaying
     ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>'
     : '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
 }
-function nextTrack(){ trackIndex = (trackIndex+1) % mockTracks.length; document.getElementById('musicTitle').textContent = mockTracks[trackIndex].title; syncFavIcon(); }
-function prevTrack(){ trackIndex = (trackIndex-1+mockTracks.length) % mockTracks.length; document.getElementById('musicTitle').textContent = mockTracks[trackIndex].title; syncFavIcon(); }
+function nextTrack(){
+  if(currentPlaylist.length===0) return;
+  trackIndex = (trackIndex+1) % currentPlaylist.length;
+  playCurrentTrack();
+}
+function prevTrack(){
+  if(currentPlaylist.length===0) return;
+  trackIndex = (trackIndex-1+currentPlaylist.length) % currentPlaylist.length;
+  playCurrentTrack();
+}
 function syncFavIcon(){
-  const track = mockTracks[trackIndex];
+  const track = currentPlaylist[trackIndex];
+  if(!track) return;
   const isFav = favEntries.some(f=>f.title===track.title);
   document.getElementById('favBtn').classList.toggle('active', isFav);
 }
 async function toggleFav(){
   const btn = document.getElementById('favBtn');
-  const track = mockTracks[trackIndex];
+  const track = currentPlaylist[trackIndex];
+  if(!track) return;
   const existing = favEntries.find(f=>f.title===track.title);
 
   if(!existing){
