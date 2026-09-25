@@ -124,7 +124,7 @@
   .field{width:100%;margin-top:18px;}
   .field input{
     width:100%;padding:14px 16px;border:1.5px solid var(--border);border-radius:var(--radius-sm);
-    font-size:15px;font-family:var(--font-body);outline:none;transition:border .15s ease;background:var(--white);
+    font-size:15px;font-family:var(--font-body);outline:none;transition:border .15s ease;background:var(--white);color:var(--ink);
   }
   .field input:focus{border-color:var(--green-600);}
   .btn-primary{
@@ -225,6 +225,11 @@
   .drawer-search input::placeholder{color:#cfe6d8;}
   .drawer-body{flex:1;overflow-y:auto;padding:8px 0 16px;}
   .drawer-section-title{padding:14px 16px 6px;font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;}
+  .drawer-section-title-row{padding:14px 16px 6px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .drawer-section-title-row .lbl{font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;}
+  .drawer-clear-btn{background:none;border:none;color:var(--danger);font-size:11px;font-weight:600;cursor:pointer;padding:2px 4px;text-transform:none;letter-spacing:0;font-family:var(--font-body);}
+  .drawer-item .del-btn{background:none;border:none;color:var(--ink-soft);font-size:14px;cursor:pointer;padding:4px 2px;flex-shrink:0;line-height:1;}
+  .drawer-item .del-btn:hover{color:var(--danger);}
   .drawer-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;}
   .drawer-item:hover{background:var(--green-050);}
   .drawer-item .ic{font-size:16px;width:22px;text-align:center;}
@@ -602,10 +607,16 @@
       </div>
     </div>
     <div class="drawer-body">
-      <div class="drawer-section-title" data-i18n="drawer_playlist">🎵 Playlist Favorit</div>
+      <div class="drawer-section-title-row">
+        <span class="lbl" data-i18n="drawer_playlist">🎵 Playlist Favorit</span>
+        <button class="drawer-clear-btn" id="favClearBtn" onclick="clearAllFav()" data-i18n="clear_all">Hapus semua</button>
+      </div>
       <div id="favList"></div>
 
-      <div class="drawer-section-title" data-i18n="drawer_history">💬 Riwayat Obrolan</div>
+      <div class="drawer-section-title-row">
+        <span class="lbl" data-i18n="drawer_history">💬 Riwayat Obrolan</span>
+        <button class="drawer-clear-btn" id="historyClearBtn" onclick="clearAllHistory()" data-i18n="clear_all">Hapus semua</button>
+      </div>
       <div id="historyList"></div>
     </div>
     <div class="drawer-footer">
@@ -654,6 +665,7 @@ const I18N = {
     share_title:"Bagikan Obrolan", share_btn:"Bagikan Gambar", share_download:"Unduh Gambar",
     dongeng_title:"Dongeng Jawa",
     drawer_playlist:"🎵 Playlist Favorit", drawer_history:"💬 Riwayat Obrolan", logout:"Keluar",
+    clear_all:"Hapus semua",
     greeting:"Halo! Aku PaiJO, bolo dewe-mu. Ada yang bisa dibantu hari ini?",
     mock_reply:"Nggih, siap! (Ini masih respons simulasi — nanti setelah API Claude tersambung, PaiJO akan menjawab sungguhan ya.)",
     music_reply:"Oke, tak putarke lagu yang santai ya!",
@@ -677,6 +689,7 @@ const I18N = {
     share_title:"Bagikan Obrolan", share_btn:"Bagikan Gambar", share_download:"Undhuh Gambar",
     dongeng_title:"Dongeng Jawa",
     drawer_playlist:"🎵 Playlist Favorit", drawer_history:"💬 Riwayat Obrolan", logout:"Metu",
+    clear_all:"Busak kabeh",
     greeting:"Nggih, kancaku! Aku PaiJO, bolo dewe-mu. Ono sing iso tak bantu dino iki?",
     mock_reply:"Nggih, siap kancaku! (Iki isih respons simulasi — mengko yen API Claude wis kesambung, PaiJO bakal njawab tenanan.)",
     music_reply:"Oke, tak setelke lagu sing santai ya!",
@@ -1142,29 +1155,75 @@ async function toggleFav(){
 }
 
 /* ============ DRAWER LISTS ============ */
+function escapeHtml(str){
+  return String(str||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 function renderFav(){
   const el = document.getElementById('favList');
+  const clearBtn = document.getElementById('favClearBtn');
   if(favEntries.length===0){
     el.innerHTML = '<div class="drawer-item"><span class="txt"><span class="t2">Belum ada lagu favorit</span></span></div>';
+    if(clearBtn) clearBtn.style.display = 'none';
     return;
   }
-  el.innerHTML = favEntries.map(f=>`
+  if(clearBtn) clearBtn.style.display = 'inline';
+  el.innerHTML = favEntries.map((f,i)=>`
     <div class="drawer-item">
       <span class="ic">🎧</span>
-      <span class="txt"><span class="t1">${f.title}</span></span>
+      <span class="txt"><span class="t1">${escapeHtml(f.title)}</span></span>
+      <button class="del-btn" onclick="event.stopPropagation();deleteFavEntry(${i});">✕</button>
     </div>`).join('');
+}
+async function deleteFavEntry(index){
+  const entry = favEntries[index];
+  if(!entry) return;
+  favEntries.splice(index,1);
+  renderFav();
+  syncFavIcon();
+  if(entry.id){
+    try{ await sb.from('favorites').delete().eq('id', entry.id); }
+    catch(e){ console.error('Gagal menghapus favorit:', e); }
+  }
+}
+async function clearAllFav(){
+  if(favEntries.length===0) return;
+  const ok = confirm(currentLang==='jw' ? 'Busak kabeh lagu favorit?' : 'Hapus semua lagu favorit?');
+  if(!ok) return;
+  const ids = favEntries.filter(f=>f.id).map(f=>f.id);
+  favEntries = [];
+  renderFav();
+  syncFavIcon();
+  if(currentUser && ids.length>0){
+    try{ await sb.from('favorites').delete().in('id', ids); }
+    catch(e){ console.error('Gagal menghapus semua favorit:', e); }
+  }
 }
 function renderHistory(){
   const el = document.getElementById('historyList');
+  const clearBtn = document.getElementById('historyClearBtn');
   if(historyEntries.length===0){
     el.innerHTML = '<div class="drawer-item"><span class="txt"><span class="t2">Belum ada obrolan</span></span></div>';
+    if(clearBtn) clearBtn.style.display = 'none';
     return;
   }
-  el.innerHTML = historyEntries.map(h=>`
+  if(clearBtn) clearBtn.style.display = 'inline';
+  el.innerHTML = historyEntries.map((h,i)=>`
     <div class="drawer-item">
       <span class="ic">💬</span>
-      <span class="txt"><span class="t1">${h.title}</span><span class="t2">${h.time}</span></span>
+      <span class="txt"><span class="t1">${escapeHtml(h.title)}</span><span class="t2">${escapeHtml(h.time)}</span></span>
+      <button class="del-btn" onclick="event.stopPropagation();deleteHistoryEntry(${i});">✕</button>
     </div>`).join('');
+}
+function deleteHistoryEntry(index){
+  historyEntries.splice(index,1);
+  renderHistory();
+}
+function clearAllHistory(){
+  if(historyEntries.length===0) return;
+  const ok = confirm(currentLang==='jw' ? 'Busak kabeh riwayat obrolan?' : 'Hapus semua riwayat obrolan?');
+  if(!ok) return;
+  historyEntries = [];
+  renderHistory();
 }
 
 /* ============ SETTINGS: FONT SIZE ============ */
