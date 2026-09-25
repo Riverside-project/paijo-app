@@ -127,6 +127,10 @@
     font-size:15px;font-family:var(--font-body);outline:none;transition:border .15s ease;background:var(--white);color:var(--ink);
   }
   .field input:focus{border-color:var(--green-600);}
+  .field-pass{position:relative;}
+  .field-pass input{padding-right:46px;}
+  .pass-toggle{position:absolute;top:0;right:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--ink-soft);cursor:pointer;padding:0;}
+  .pass-toggle:hover{color:var(--accent);}
   .btn-primary{
     width:100%;margin-top:22px;padding:15px;border:none;border-radius:var(--radius-sm);
     background:var(--green-900);color:var(--on-accent);font-weight:700;font-size:15.5px;
@@ -384,7 +388,12 @@
       <div class="login-sub">Bolo Dewe</div>
 
       <div class="field"><input type="text" id="loginEmail" data-i18n-ph="ph_email" placeholder="Email / No. HP"></div>
-      <div class="field"><input type="password" id="loginPass" data-i18n-ph="ph_pass" placeholder="Password"></div>
+      <div class="field field-pass">
+        <input type="password" id="loginPass" data-i18n-ph="ph_pass" placeholder="Password">
+        <button type="button" class="pass-toggle" id="passToggleBtn" onclick="togglePassVisibility()" aria-label="Lihat/Sembunyikan sandi">
+          <svg id="passToggleIcon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
       <button class="btn-primary" data-i18n="btn_login" onclick="doLogin()">Masuk</button>
       <div class="login-links">
         <a href="#" data-i18n="link_forgot">Lupa Password?</a>
@@ -736,6 +745,15 @@ function showScreen(id){
 }
 function goSplashBack(){ showScreen('screen-splash'); setTimeout(()=>showScreen('screen-login'), 400); }
 
+function togglePassVisibility(){
+  const input = document.getElementById('loginPass');
+  const icon = document.getElementById('passToggleIcon');
+  const showing = input.type === 'text';
+  input.type = showing ? 'password' : 'text';
+  icon.innerHTML = showing
+    ? '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/>'
+    : '<path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a18.5 18.5 0 0 1 4.22-5.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 7 11 7a18.5 18.5 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+}
 function setLoginBusy(busy, msg){
   const btn = document.querySelector('#screen-login .btn-primary');
   if(!btn) return;
