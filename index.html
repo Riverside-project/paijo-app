@@ -1008,7 +1008,7 @@ async function sendMessage(){
   area.scrollTop = area.scrollHeight;
 
   const lower = text.toLowerCase();
-  const isMusicRequest = lower.includes('lagu') || lower.includes('musik') || lower.includes('setel');
+  const isMusicRequest = isMusicRequestText(lower);
 
   try{
     const recentHistory = chatHistory.slice(0, -1).slice(-10); // riwayat sebelum pesan yang baru dikirim
@@ -1040,6 +1040,13 @@ async function sendMessage(){
   }
 }
 
+function isMusicRequestText(lower){
+  // kalimat yang NANYA soal fitur/kemampuan muter lagu, bukan PERINTAH muter lagu
+  const isMeta = /\b(kenapa|napa|ngopo|kenopo|mengapa)\b/.test(lower)
+    || /\b(iso|isa|bisa|apakah)\b[^.?!]{0,20}\b(setel|puter|putar|nyetel)\b/.test(lower);
+  if(isMeta) return false;
+  return lower.includes('lagu') || lower.includes('musik') || lower.includes('setel');
+}
 function extractMusicQuery(text){
   let q = text.toLowerCase();
   const stopWords = ['tolong','coba','dong','yuk','ayo','mbok','please','setelke','setelkan','setel','puterin','putarkan','putarin','putar','muter','carikan','carikanlah','carikan','carikke','goleke','nggoleke','lagu','musik','jawa','the','song','music'];
