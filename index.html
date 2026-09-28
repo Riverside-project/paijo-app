@@ -250,6 +250,7 @@
   .setting-block{padding:18px 0;border-bottom:1px solid var(--border);}
   .setting-title{font-weight:700;font-size:14.5px;color:var(--ink);margin-bottom:10px;}
   .setting-desc{font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;}
+  .setting-row{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:600;color:var(--ink);}
   .fontsize-options{display:flex;gap:8px;}
   .fontsize-opt{flex:1;padding:10px 0;text-align:center;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;font-weight:600;color:var(--ink-soft);}
   .fontsize-opt.active{border-color:var(--accent);color:var(--accent);background:var(--green-050);}
@@ -584,6 +585,16 @@
           <span data-i18n="lang_id">Indonesia</span>
         </div>
       </div>
+      <div class="setting-block">
+        <div class="setting-title" data-i18n="settings_memory_title">Ingat Konteks Obrolan</div>
+        <div class="setting-desc" data-i18n="settings_memory_desc">Yen diaktifake, PaiJO bakal eling bab-bab penting sing kok critakke, senajan wis pindhah tab obrolan liyane.</div>
+        <div class="setting-row">
+          <span data-i18n="settings_memory_switch_label">Aktifake</span>
+          <div class="switch" id="memorySwitch" onclick="toggleMemory()"></div>
+        </div>
+        <div class="setting-desc" id="memoryPreview" style="margin-top:10px;display:none;"></div>
+        <button class="drawer-clear-btn" id="memoryClearBtn" onclick="clearMemory()" style="margin-top:8px;display:none;" data-i18n="clear_memory">Hapus memori</button>
+      </div>
     </div>
   </div>
 
@@ -661,6 +672,8 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentUser = null;
 let currentConversationId = null;
+let memoryEnabled = false;
+let memoryNotes = '';
 </script>
 <script>
 /* ============ I18N ============ */
@@ -675,6 +688,8 @@ const I18N = {
     settings_lang_title:"Bahasa", settings_lang_desc:"Bahasa tampilan & jawaban PaiJO.",
     settings_theme_title:"Mode Tampilan", settings_theme_desc:"Pilih tampilan terang atau gelap yang nyaman untuk matamu.",
     settings_theme_light:"Terang", settings_theme_dark:"Gelap",
+    settings_memory_title:"Ingat Konteks Obrolan", settings_memory_desc:"Kalau diaktifkan, PaiJO akan ingat hal-hal penting yang kamu ceritakan, walau sudah pindah ke tab obrolan lain.",
+    settings_memory_switch_label:"Aktifkan", clear_memory:"Hapus memori",
     share_title:"Bagikan Obrolan", share_btn:"Bagikan Gambar", share_download:"Unduh Gambar",
     dongeng_title:"Dongeng Jawa",
     drawer_playlist:"🎵 Playlist Favorit", drawer_history:"💬 Riwayat Obrolan", logout:"Keluar",
@@ -699,6 +714,8 @@ const I18N = {
     settings_lang_title:"Basa", settings_lang_desc:"Basa tampilan & wangsulane PaiJO.",
     settings_theme_title:"Mode Tampilan", settings_theme_desc:"Pilih tampilan padhang utawa peteng sing kepenak kanggo matamu.",
     settings_theme_light:"Padhang", settings_theme_dark:"Peteng",
+    settings_memory_title:"Ingat Konteks Obrolan", settings_memory_desc:"Yen diaktifake, PaiJO bakal eling bab-bab penting sing kok critakke, senajan wis pindhah tab obrolan liyane.",
+    settings_memory_switch_label:"Aktifake", clear_memory:"Busak memori",
     share_title:"Bagikan Obrolan", share_btn:"Bagikan Gambar", share_download:"Undhuh Gambar",
     dongeng_title:"Dongeng Jawa",
     drawer_playlist:"🎵 Playlist Favorit", drawer_history:"💬 Riwayat Obrolan", logout:"Metu",
@@ -721,6 +738,7 @@ function toggleLang(){
   document.getElementById('loginLangSwitch').classList.toggle('on', currentLang==='jw');
   document.getElementById('settingsLangSwitch').classList.toggle('on', currentLang==='jw');
   applyI18n();
+  renderMemorySwitch();
   if(currentUser){
     sb.from('profiles').update({ preferred_lang: currentLang }).eq('id', currentUser.id)
       .then(()=>{}, (e)=>console.log('Gagal simpan bahasa:', e));
@@ -824,8 +842,11 @@ async function loadUserDataAndEnterChat(){
       if(profile.font_scale){
         document.documentElement.style.setProperty('--font-scale', profile.font_scale);
       }
+      memoryEnabled = !!profile.memory_enabled;
+      memoryNotes = profile.memory_notes || '';
     }
   }catch(e){ errors.push('profiles: '+e.message); console.error('profiles error', e); }
+  renderMemorySwitch();
 
   document.getElementById('loginLangSwitch').classList.toggle('on', currentLang==='jw');
   document.getElementById('settingsLangSwitch').classList.toggle('on', currentLang==='jw');
@@ -892,6 +913,8 @@ async function doLogout(){
   chatHistory = [];
   favEntries = [];
   conversationsList = [];
+  memoryEnabled = false;
+  memoryNotes = '';
   showScreen('screen-login');
 }
 
@@ -1020,6 +1043,14 @@ async function sendMessage(){
     if(data && data.musicQuery){
       searchAndPlay(data.musicQuery);
     }
+    if(memoryEnabled && data && typeof data.memoryNotes === 'string' && data.memoryNotes && data.memoryNotes !== memoryNotes){
+      memoryNotes = data.memoryNotes;
+      renderMemorySwitch();
+      if(currentUser){
+        try{ await sb.from('profiles').update({ memory_notes: memoryNotes }).eq('id', currentUser.id); }
+        catch(e){ console.error('Gagal simpan memori:', e); }
+      }
+    }
   }catch(e){
     console.error('Gagal memanggil chat function:', e);
     const t = document.getElementById('typingRow');
@@ -1034,7 +1065,11 @@ async function sendMessage(){
 async function invokeChatWithRetry(text, lang, recentHistory, attempt){
   attempt = attempt || 1;
   const { data, error } = await sb.functions.invoke('chat', {
-    body: { message: text, lang, history: recentHistory }
+    body: {
+      message: text, lang, history: recentHistory,
+      rememberEnabled: memoryEnabled,
+      memory: memoryEnabled ? memoryNotes : null
+    }
   });
   if(error){
     if(attempt < 2){
@@ -1952,6 +1987,39 @@ async function doShareImage(){
 }
 
 /* ============ MODE TERANG / PETENG (DARK MODE) ============ */
+function renderMemorySwitch(){
+  const sw = document.getElementById('memorySwitch');
+  const preview = document.getElementById('memoryPreview');
+  const clearBtn = document.getElementById('memoryClearBtn');
+  if(!sw) return;
+  sw.classList.toggle('on', memoryEnabled);
+  if(memoryEnabled && memoryNotes){
+    preview.textContent = (currentLang==='jw' ? 'Sing dieling-eling PaiJO: ' : 'Yang PaiJO ingat: ') + memoryNotes;
+    preview.style.display = 'block';
+    clearBtn.style.display = 'inline-block';
+  } else {
+    preview.style.display = 'none';
+    clearBtn.style.display = 'none';
+  }
+}
+async function toggleMemory(){
+  memoryEnabled = !memoryEnabled;
+  renderMemorySwitch();
+  if(currentUser){
+    try{ await sb.from('profiles').update({ memory_enabled: memoryEnabled }).eq('id', currentUser.id); }
+    catch(e){ console.error('Gagal update memory_enabled:', e); }
+  }
+}
+async function clearMemory(){
+  const ok = confirm(currentLang==='jw' ? 'Busak kabeh memori PaiJO bab kowe?' : 'Hapus semua memori PaiJO tentang kamu?');
+  if(!ok) return;
+  memoryNotes = '';
+  renderMemorySwitch();
+  if(currentUser){
+    try{ await sb.from('profiles').update({ memory_notes: '' }).eq('id', currentUser.id); }
+    catch(e){ console.error('Gagal menghapus memori:', e); }
+  }
+}
 function setTheme(mode){
   const isDark = mode === 'dark';
   if(isDark){
