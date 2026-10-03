@@ -300,6 +300,34 @@
   .kamus-item .ki-cat{font-size:10.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;margin-top:4px;}
   .kamus-empty{text-align:center;color:var(--ink-soft);font-size:13.5px;padding:40px 20px;}
 
+  /* ---------- PARIBASAN & ISTILAH JAWA (baca) ---------- */
+  #screen-paribasan{background:var(--bg);}
+  #screen-istilah{background:var(--bg);}
+
+  /* ---------- ADMIN ---------- */
+  #screen-admin{background:var(--bg);}
+  .admin-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px;}
+  .admin-tabs{display:flex;gap:8px;}
+  .admin-tab{flex:1;text-align:center;padding:10px;border-radius:12px;background:var(--green-050);color:var(--accent);font-weight:700;font-size:13px;cursor:pointer;}
+  .admin-tab.active{background:var(--green-900);color:var(--on-accent);}
+  .admin-section{display:flex;flex-direction:column;gap:12px;}
+  .admin-form{display:flex;flex-direction:column;gap:10px;background:var(--white);border:1px solid var(--border);border-radius:14px;padding:14px;}
+  .admin-form .field{margin-top:0;width:auto;}
+  .admin-form textarea{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font-body);outline:none;resize:vertical;color:var(--ink);background:var(--white);box-sizing:border-box;}
+  .admin-form textarea:focus{border-color:var(--green-600);}
+  .admin-form-actions{display:flex;gap:8px;}
+  .admin-save-btn{flex:1;padding:12px;border:none;border-radius:var(--radius-sm);background:var(--green-900);color:var(--on-accent);font-weight:700;font-size:14px;cursor:pointer;font-family:var(--font-body);}
+  .admin-cancel-btn{padding:12px 16px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:none;color:var(--ink-soft);font-weight:600;font-size:13px;cursor:pointer;font-family:var(--font-body);}
+  .admin-list{display:flex;flex-direction:column;gap:8px;}
+  .admin-list-item{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;}
+  .admin-list-item .ali-body{flex:1;min-width:0;}
+  .admin-list-item .ali-title{font-family:var(--font-display);font-weight:700;font-size:14.5px;color:var(--accent);}
+  .admin-list-item .ali-desc{font-size:12.5px;color:var(--ink-soft);margin-top:3px;}
+  .admin-list-item .ali-actions{display:flex;gap:4px;flex-shrink:0;}
+  .admin-list-item .ali-actions button{background:none;border:none;color:var(--ink-soft);font-size:14px;cursor:pointer;padding:4px;}
+  .admin-list-item .ali-actions button:hover{color:var(--accent);}
+  .admin-list-item .ali-actions button.ali-del:hover{color:var(--danger);}
+
   /* ---------- SHARE MODAL ---------- */
   .share-overlay{
     position:absolute;inset:0;background:rgba(10,20,15,.6);display:none;
@@ -526,6 +554,80 @@
     <div class="kamus-list" id="kamusList"></div>
   </div>
 
+  <!-- ===================== PARIBASAN JAWA ===================== -->
+  <div class="screen" id="screen-paribasan">
+    <div class="app-header">
+      <div class="header-left">
+        <button class="back-btn" onclick="showScreen('screen-chat')">‹</button>
+        <div class="header-title" data-i18n="paribasan_title">Paribasan Jawa</div>
+      </div>
+      <div></div>
+    </div>
+    <div class="kamus-search-bar">
+      <input type="text" id="paribasanSearch" class="kamus-search-input" data-i18n-ph="paribasan_search_ph" placeholder="Golek paribasan..." oninput="renderParibasanList()">
+    </div>
+    <div class="kamus-list" id="paribasanList"></div>
+  </div>
+
+  <!-- ===================== ISTILAH JAWA ===================== -->
+  <div class="screen" id="screen-istilah">
+    <div class="app-header">
+      <div class="header-left">
+        <button class="back-btn" onclick="showScreen('screen-chat')">‹</button>
+        <div class="header-title" data-i18n="istilah_title">Istilah Jawa</div>
+      </div>
+      <div></div>
+    </div>
+    <div class="kamus-search-bar">
+      <input type="text" id="istilahSearch" class="kamus-search-input" data-i18n-ph="istilah_search_ph" placeholder="Golek istilah..." oninput="renderIstilahList()">
+    </div>
+    <div class="kamus-list" id="istilahList"></div>
+  </div>
+
+  <!-- ===================== ADMIN PAIJO ===================== -->
+  <div class="screen" id="screen-admin">
+    <div class="app-header">
+      <div class="header-left">
+        <button class="back-btn" onclick="showScreen('screen-chat')">‹</button>
+        <div class="header-title" data-i18n="admin_title">Admin PaiJO</div>
+      </div>
+      <div></div>
+    </div>
+    <div class="admin-body">
+      <div class="admin-tabs">
+        <div class="admin-tab active" id="adminTabParibasan" onclick="setAdminTab('paribasan')" data-i18n="paribasan_title">Paribasan Jawa</div>
+        <div class="admin-tab" id="adminTabIstilah" onclick="setAdminTab('istilah')" data-i18n="istilah_title">Istilah Jawa</div>
+      </div>
+
+      <div class="admin-section" id="adminSectionParibasan">
+        <div class="admin-form">
+          <div class="field"><input type="text" id="pbUngkapan" placeholder="Ungkapan (contoh: Mikul Dhuwur Mendhem Jero)"></div>
+          <div class="field"><input type="text" id="pbArtiHarfiah" placeholder="Arti harfiah (opsional)"></div>
+          <div class="field"><textarea id="pbMakna" rows="2" placeholder="Makna / penjelasan"></textarea></div>
+          <div class="field"><textarea id="pbContoh" rows="2" placeholder="Contoh pemakaian (opsional)"></textarea></div>
+          <div class="admin-form-actions">
+            <button class="admin-save-btn" id="pbSaveBtn" onclick="saveParibasan()">Simpan</button>
+            <button class="admin-cancel-btn" id="pbCancelBtn" style="display:none;" onclick="resetParibasanForm()">Batal edit</button>
+          </div>
+        </div>
+        <div class="admin-list" id="adminParibasanList"></div>
+      </div>
+
+      <div class="admin-section" id="adminSectionIstilah" style="display:none;">
+        <div class="admin-form">
+          <div class="field"><input type="text" id="isIstilah" placeholder="Istilah (contoh: Nrimo ing Pandum)"></div>
+          <div class="field"><textarea id="isPenjelasan" rows="2" placeholder="Penjelasan"></textarea></div>
+          <div class="field"><textarea id="isContoh" rows="2" placeholder="Contoh pemakaian (opsional)"></textarea></div>
+          <div class="admin-form-actions">
+            <button class="admin-save-btn" id="isSaveBtn" onclick="saveIstilah()">Simpan</button>
+            <button class="admin-cancel-btn" id="isCancelBtn" style="display:none;" onclick="resetIstilahForm()">Batal edit</button>
+          </div>
+        </div>
+        <div class="admin-list" id="adminIstilahList"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ===================== DONGENG JAWA ===================== -->
   <div class="screen" id="screen-dongeng">
     <div class="app-header">
@@ -653,6 +755,15 @@
       <div class="drawer-item" onclick="showScreen('screen-kalender');closeDrawer();renderKalender();">
         <span class="ic">📅</span><span class="txt"><span class="t1" data-i18n="kalender_title">Kalender Jawa</span></span>
       </div>
+      <div class="drawer-item" onclick="showScreen('screen-paribasan');closeDrawer();renderParibasanList();">
+        <span class="ic">🗣️</span><span class="txt"><span class="t1" data-i18n="paribasan_title">Paribasan Jawa</span></span>
+      </div>
+      <div class="drawer-item" onclick="showScreen('screen-istilah');closeDrawer();renderIstilahList();">
+        <span class="ic">💡</span><span class="txt"><span class="t1" data-i18n="istilah_title">Istilah Jawa</span></span>
+      </div>
+      <div class="drawer-item" id="adminDrawerItem" style="display:none;" onclick="showScreen('screen-admin');closeDrawer();renderAdminLists();">
+        <span class="ic">🛠️</span><span class="txt"><span class="t1" data-i18n="admin_title">Admin PaiJO</span></span>
+      </div>
       <div class="drawer-item" onclick="showScreen('screen-settings');closeDrawer();">
         <span class="ic">⚙️</span><span class="txt"><span class="t1" data-i18n="settings_title">Pengaturan</span></span>
       </div>
@@ -674,6 +785,11 @@ let currentUser = null;
 let currentConversationId = null;
 let memoryEnabled = false;
 let memoryNotes = '';
+let isAdmin = false;
+let paribasanData = [];
+let istilahData = [];
+let editingParibasanId = null;
+let editingIstilahId = null;
 
 const DAY_NAMES_ID = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 const MONTH_NAMES_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
@@ -733,6 +849,9 @@ const I18N = {
     kalender_kliwon_title:"Selasa/Jumat Kliwon Mendatang", kalender_kliwon_desc:"Menurut kepercayaan Jawa, hari Kliwon (terutama Selasa Kliwon dan Jumat Kliwon) dianggap hari yang sakral.",
     kalender_disclaimer:"Info ini berdasarkan tradisi dan kepercayaan budaya Jawa, bukan ramalan yang pasti terjadi. Digunakan untuk melestarikan budaya saja ya, temanku.",
     kamus_title:"Kamus Jawa", kamus_search_ph:"Cari kata Jawa atau Indonesia...",
+    paribasan_title:"Paribasan Jawa", paribasan_search_ph:"Cari paribasan...",
+    istilah_title:"Istilah Jawa", istilah_search_ph:"Cari istilah...",
+    admin_title:"Admin PaiJO",
   },
   jw:{
     lang_jawa:"Jawa", lang_id:"Indonesia",
@@ -759,6 +878,9 @@ const I18N = {
     kalender_kliwon_title:"Selasa/Jumat Kliwon Ngarep", kalender_kliwon_desc:"Miturut kapercayan Jawa, dina Kliwon (utamane Selasa Kliwon lan Jumat Kliwon) dianggep dina sing sakral.",
     kalender_disclaimer:"Info iki adhedhasar tradisi lan kapercayan budaya Jawa, dudu ramalan sing mesthi kedadeyan. Digunakke kanggo nguri-uri budaya wae, ya kancaku.",
     kamus_title:"Kamus Jawa", kamus_search_ph:"Golek tembung Jawa utawa Indonesia...",
+    paribasan_title:"Paribasan Jawa", paribasan_search_ph:"Golek paribasan...",
+    istilah_title:"Istilah Jawa", istilah_search_ph:"Golek istilah...",
+    admin_title:"Admin PaiJO",
   }
 };
 let currentLang = "jw"; // default sesuai toggle "on" = Jawa
@@ -874,9 +996,12 @@ async function loadUserDataAndEnterChat(){
       }
       memoryEnabled = !!profile.memory_enabled;
       memoryNotes = profile.memory_notes || '';
+      isAdmin = !!profile.is_admin;
     }
   }catch(e){ errors.push('profiles: '+e.message); console.error('profiles error', e); }
   renderMemorySwitch();
+  const adminItem = document.getElementById('adminDrawerItem');
+  if(adminItem) adminItem.style.display = isAdmin ? 'flex' : 'none';
 
   document.getElementById('loginLangSwitch').classList.toggle('on', currentLang==='jw');
   document.getElementById('settingsLangSwitch').classList.toggle('on', currentLang==='jw');
@@ -945,6 +1070,9 @@ async function doLogout(){
   conversationsList = [];
   memoryEnabled = false;
   memoryNotes = '';
+  isAdmin = false;
+  const adminItem = document.getElementById('adminDrawerItem');
+  if(adminItem) adminItem.style.display = 'none';
   showScreen('screen-login');
 }
 
@@ -1653,6 +1781,254 @@ function renderKamusList(){
       <div class="ki-cat">${k.cat}</div>
     </div>
   `).join('');
+}
+
+/* ============ PARIBASAN & ISTILAH JAWA (baca) ============ */
+async function renderParibasanList(){
+  const el = document.getElementById('paribasanList');
+  try{
+    const { data, error } = await sb.from('paribasan_entries').select('*').order('ungkapan', { ascending:true });
+    if(error) throw error;
+    paribasanData = data || [];
+  }catch(e){
+    console.error('Gagal memuat paribasan:', e);
+    el.innerHTML = `<div class="kamus-empty">${currentLang==='jw' ? 'Gagal njupuk data, jajal maneh ya.' : 'Gagal memuat data, coba lagi ya.'}</div>`;
+    return;
+  }
+  const q = (document.getElementById('paribasanSearch').value || '').toLowerCase().trim();
+  let items = paribasanData;
+  if(q){
+    items = items.filter(p => (p.ungkapan||'').toLowerCase().includes(q) || (p.makna||'').toLowerCase().includes(q));
+  }
+  if(items.length === 0){
+    el.innerHTML = `<div class="kamus-empty">${currentLang==='jw' ? 'Durung ana paribasan sing cocog.' : 'Belum ada paribasan yang cocok.'}</div>`;
+    return;
+  }
+  el.innerHTML = items.map(p => `
+    <div class="kamus-item">
+      <div class="ki-jw">${escapeHtml(p.ungkapan)}</div>
+      ${p.arti_harfiah ? `<div class="ki-id">${escapeHtml(p.arti_harfiah)}</div>` : ''}
+      <div class="ki-id" style="margin-top:4px;">${escapeHtml(p.makna)}</div>
+      ${p.contoh ? `<div class="ki-cat" style="text-transform:none;letter-spacing:0;margin-top:4px;">${currentLang==='jw' ? 'Conto' : 'Contoh'}: ${escapeHtml(p.contoh)}</div>` : ''}
+    </div>
+  `).join('');
+}
+async function renderIstilahList(){
+  const el = document.getElementById('istilahList');
+  try{
+    const { data, error } = await sb.from('istilah_entries').select('*').order('istilah', { ascending:true });
+    if(error) throw error;
+    istilahData = data || [];
+  }catch(e){
+    console.error('Gagal memuat istilah:', e);
+    el.innerHTML = `<div class="kamus-empty">${currentLang==='jw' ? 'Gagal njupuk data, jajal maneh ya.' : 'Gagal memuat data, coba lagi ya.'}</div>`;
+    return;
+  }
+  const q = (document.getElementById('istilahSearch').value || '').toLowerCase().trim();
+  let items = istilahData;
+  if(q){
+    items = items.filter(i => (i.istilah||'').toLowerCase().includes(q) || (i.penjelasan||'').toLowerCase().includes(q));
+  }
+  if(items.length === 0){
+    el.innerHTML = `<div class="kamus-empty">${currentLang==='jw' ? 'Durung ana istilah sing cocog.' : 'Belum ada istilah yang cocok.'}</div>`;
+    return;
+  }
+  el.innerHTML = items.map(i => `
+    <div class="kamus-item">
+      <div class="ki-jw">${escapeHtml(i.istilah)}</div>
+      <div class="ki-id" style="margin-top:4px;">${escapeHtml(i.penjelasan)}</div>
+      ${i.contoh ? `<div class="ki-cat" style="text-transform:none;letter-spacing:0;margin-top:4px;">${currentLang==='jw' ? 'Conto' : 'Contoh'}: ${escapeHtml(i.contoh)}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+/* ============ ADMIN PAIJO ============ */
+function setAdminTab(tab){
+  document.getElementById('adminTabParibasan').classList.toggle('active', tab==='paribasan');
+  document.getElementById('adminTabIstilah').classList.toggle('active', tab==='istilah');
+  document.getElementById('adminSectionParibasan').style.display = tab==='paribasan' ? 'flex' : 'none';
+  document.getElementById('adminSectionIstilah').style.display = tab==='istilah' ? 'flex' : 'none';
+}
+async function renderAdminLists(){
+  setAdminTab('paribasan');
+  await renderAdminParibasanList();
+  await renderAdminIstilahList();
+}
+async function renderAdminParibasanList(){
+  const el = document.getElementById('adminParibasanList');
+  try{
+    const { data, error } = await sb.from('paribasan_entries').select('*').order('created_at', { ascending:false });
+    if(error) throw error;
+    paribasanData = data || [];
+  }catch(e){
+    console.error('Gagal memuat paribasan (admin):', e);
+    el.innerHTML = `<div class="kamus-empty">${currentLang==='jw' ? 'Gagal njupuk data.' : 'Gagal memuat data.'}</div>`;
+    return;
+  }
+  if(paribasanData.length === 0){
+    el.innerHTML = `<div class="kamus-empty">${currentLang==='jw' ? 'Durung ana data.' : 'Belum ada data.'}</div>`;
+    return;
+  }
+  el.innerHTML = paribasanData.map(p => `
+    <div class="admin-list-item">
+      <div class="ali-body">
+        <div class="ali-title">${escapeHtml(p.ungkapan)}</div>
+        <div class="ali-desc">${escapeHtml(p.makna)}</div>
+      </div>
+      <div class="ali-actions">
+        <button onclick="editParibasan('${p.id}')" title="Edit">✎</button>
+        <button class="ali-del" onclick="deleteParibasan('${p.id}')" title="Hapus">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+function editParibasan(id){
+  const p = paribasanData.find(x => x.id === id);
+  if(!p) return;
+  editingParibasanId = id;
+  document.getElementById('pbUngkapan').value = p.ungkapan || '';
+  document.getElementById('pbArtiHarfiah').value = p.arti_harfiah || '';
+  document.getElementById('pbMakna').value = p.makna || '';
+  document.getElementById('pbContoh').value = p.contoh || '';
+  document.getElementById('pbSaveBtn').textContent = currentLang==='jw' ? 'Dandani' : 'Perbarui';
+  document.getElementById('pbCancelBtn').style.display = 'inline-block';
+}
+function resetParibasanForm(){
+  editingParibasanId = null;
+  document.getElementById('pbUngkapan').value = '';
+  document.getElementById('pbArtiHarfiah').value = '';
+  document.getElementById('pbMakna').value = '';
+  document.getElementById('pbContoh').value = '';
+  document.getElementById('pbSaveBtn').textContent = 'Simpan';
+  document.getElementById('pbCancelBtn').style.display = 'none';
+}
+async function saveParibasan(){
+  const ungkapan = document.getElementById('pbUngkapan').value.trim();
+  const artiHarfiah = document.getElementById('pbArtiHarfiah').value.trim();
+  const makna = document.getElementById('pbMakna').value.trim();
+  const contoh = document.getElementById('pbContoh').value.trim();
+  if(!ungkapan || !makna){
+    alert(currentLang==='jw' ? 'Ungkapan lan makna kudu diisi.' : 'Ungkapan dan makna wajib diisi.');
+    return;
+  }
+  try{
+    if(editingParibasanId){
+      const { error } = await sb.from('paribasan_entries').update({
+        ungkapan, arti_harfiah: artiHarfiah || null, makna, contoh: contoh || null
+      }).eq('id', editingParibasanId);
+      if(error) throw error;
+    } else {
+      const { error } = await sb.from('paribasan_entries').insert({
+        ungkapan, arti_harfiah: artiHarfiah || null, makna, contoh: contoh || null, created_by: currentUser.id
+      });
+      if(error) throw error;
+    }
+    resetParibasanForm();
+    await renderAdminParibasanList();
+  }catch(e){
+    console.error('Gagal menyimpan paribasan:', e);
+    alert(currentLang==='jw' ? 'Gagal nyimpen data, jajal maneh ya.' : 'Gagal menyimpan data, coba lagi ya.');
+  }
+}
+async function deleteParibasan(id){
+  const ok = confirm(currentLang==='jw' ? 'Busak paribasan iki?' : 'Hapus paribasan ini?');
+  if(!ok) return;
+  try{
+    const { error } = await sb.from('paribasan_entries').delete().eq('id', id);
+    if(error) throw error;
+    if(editingParibasanId === id) resetParibasanForm();
+    await renderAdminParibasanList();
+  }catch(e){
+    console.error('Gagal menghapus paribasan:', e);
+    alert(currentLang==='jw' ? 'Gagal mbusak data.' : 'Gagal menghapus data.');
+  }
+}
+
+async function renderAdminIstilahList(){
+  const el = document.getElementById('adminIstilahList');
+  try{
+    const { data, error } = await sb.from('istilah_entries').select('*').order('created_at', { ascending:false });
+    if(error) throw error;
+    istilahData = data || [];
+  }catch(e){
+    console.error('Gagal memuat istilah (admin):', e);
+    el.innerHTML = `<div class="kamus-empty">${currentLang==='jw' ? 'Gagal njupuk data.' : 'Gagal memuat data.'}</div>`;
+    return;
+  }
+  if(istilahData.length === 0){
+    el.innerHTML = `<div class="kamus-empty">${currentLang==='jw' ? 'Durung ana data.' : 'Belum ada data.'}</div>`;
+    return;
+  }
+  el.innerHTML = istilahData.map(i => `
+    <div class="admin-list-item">
+      <div class="ali-body">
+        <div class="ali-title">${escapeHtml(i.istilah)}</div>
+        <div class="ali-desc">${escapeHtml(i.penjelasan)}</div>
+      </div>
+      <div class="ali-actions">
+        <button onclick="editIstilah('${i.id}')" title="Edit">✎</button>
+        <button class="ali-del" onclick="deleteIstilah('${i.id}')" title="Hapus">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+function editIstilah(id){
+  const i = istilahData.find(x => x.id === id);
+  if(!i) return;
+  editingIstilahId = id;
+  document.getElementById('isIstilah').value = i.istilah || '';
+  document.getElementById('isPenjelasan').value = i.penjelasan || '';
+  document.getElementById('isContoh').value = i.contoh || '';
+  document.getElementById('isSaveBtn').textContent = currentLang==='jw' ? 'Dandani' : 'Perbarui';
+  document.getElementById('isCancelBtn').style.display = 'inline-block';
+}
+function resetIstilahForm(){
+  editingIstilahId = null;
+  document.getElementById('isIstilah').value = '';
+  document.getElementById('isPenjelasan').value = '';
+  document.getElementById('isContoh').value = '';
+  document.getElementById('isSaveBtn').textContent = 'Simpan';
+  document.getElementById('isCancelBtn').style.display = 'none';
+}
+async function saveIstilah(){
+  const istilah = document.getElementById('isIstilah').value.trim();
+  const penjelasan = document.getElementById('isPenjelasan').value.trim();
+  const contoh = document.getElementById('isContoh').value.trim();
+  if(!istilah || !penjelasan){
+    alert(currentLang==='jw' ? 'Istilah lan penjelasan kudu diisi.' : 'Istilah dan penjelasan wajib diisi.');
+    return;
+  }
+  try{
+    if(editingIstilahId){
+      const { error } = await sb.from('istilah_entries').update({
+        istilah, penjelasan, contoh: contoh || null
+      }).eq('id', editingIstilahId);
+      if(error) throw error;
+    } else {
+      const { error } = await sb.from('istilah_entries').insert({
+        istilah, penjelasan, contoh: contoh || null, created_by: currentUser.id
+      });
+      if(error) throw error;
+    }
+    resetIstilahForm();
+    await renderAdminIstilahList();
+  }catch(e){
+    console.error('Gagal menyimpan istilah:', e);
+    alert(currentLang==='jw' ? 'Gagal nyimpen data, jajal maneh ya.' : 'Gagal menyimpan data, coba lagi ya.');
+  }
+}
+async function deleteIstilah(id){
+  const ok = confirm(currentLang==='jw' ? 'Busak istilah iki?' : 'Hapus istilah ini?');
+  if(!ok) return;
+  try{
+    const { error } = await sb.from('istilah_entries').delete().eq('id', id);
+    if(error) throw error;
+    if(editingIstilahId === id) resetIstilahForm();
+    await renderAdminIstilahList();
+  }catch(e){
+    console.error('Gagal menghapus istilah:', e);
+    alert(currentLang==='jw' ? 'Gagal mbusak data.' : 'Gagal menghapus data.');
+  }
 }
 
 /* ============ DONGENG JAWA ============ */
